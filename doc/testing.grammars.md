@@ -1,4 +1,4 @@
-# Testing ANTLR Parsers
+# Testing ANTLR Grammars
 
 Once you've compiled a lexer/parser as shown in the
 [README](../README.md), you can use ANTLR's

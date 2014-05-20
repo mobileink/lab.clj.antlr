@@ -11,4 +11,3 @@
                  [org.antlr/antlr4-runtime "4.2.2"]
                  [org.antlr/ST4 "4.0.8"]
                  ])
-                 ;; [clj-antlr "0.2.2"]])
