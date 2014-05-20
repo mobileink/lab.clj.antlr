@@ -3,7 +3,9 @@
            [org.antlr.v4.runtime ANTLRInputStream ANTLRFileStream CommonTokenStream]
            [org.antlr.v4.runtime.tree ParseTree ParseTreeWalker]))
 
-(defn- make-listener [parser]
+;; see also http://www.nickpascucci.com/blog/2014/03/01/using-antlr-from-clojure/
+
+(defn- listener [parser]
     (proxy [ClojureBaseListener] []
       ;; (enterEveryRule [ctx]
       ;;   (do
@@ -46,7 +48,7 @@
         tree (do ;;(println "getting tree")
                (.file parser))] ; "file" is the start rule of the grammar
     (do
-      (.walk (ParseTreeWalker.) (make-listener parser) tree))))
+      (.walk (ParseTreeWalker.) (listener parser) tree))))
 
 (defn parse-file [file]
   "Parse file 'file using the Clojure parser."
@@ -65,4 +67,4 @@
         tree (do ;;(println "getting tree")
                (.file parser))] ; "file" is the start rule of the grammar
     (do
-      (.walk (ParseTreeWalker.) (make-listener parser) tree))))
+      (.walk (ParseTreeWalker.) (listener parser) tree))))

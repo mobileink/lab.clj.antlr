@@ -45,7 +45,7 @@ ClojureBaseListener).  To passively crawl the tree using a SAX-like
 strategy, just subclass the <FOO>BaseListener and implement the
 methods you need.
 
-See src/clojure/org/mobileink/antlr.clj for an example of how to do
+See [src/clojure/org/mobileink/antlr.clj](src/clojure/org/mobileink/antlr.clj) for an example of how to do
 this in Clojure using `proxy`.
 
 ### Active
