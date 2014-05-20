@@ -25,12 +25,6 @@ methods you need.
 See [src/clojure/org/mobileink/antlr.clj](src/clojure/org/mobileink/antlr.clj) for an example of how to do
 this in Clojure using `proxy`.
 
-> Note that the DOM API is a pull API, not a third type of API, as is
-> sometimes claimed.  If you use a DOM API to manipulate an XML
-> document, you are responsible for managing traversal of the tree and
-> fetching data from it: the pull model - which means *active*
-> traversal.
-
 ## Active
 
 By "active" crawling I mean a method in which the crawling is

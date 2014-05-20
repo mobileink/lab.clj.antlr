@@ -41,7 +41,6 @@ to end, push data as it goes.
 [On Using XML Pull Parsing Java APIs](http://xmlpull.org/history/index.html)
 discusses a variety of XML pull APIs.
 
-
 So-called "pull" APIs make the client responsible for crawling the
 tree and demanding data.  The client effectively tells the service
 "give me the current node" and then "give me the first child (or
@@ -67,4 +66,57 @@ proceeds; otherwise it stops, at least on that branch of the tree.
 And it can force continuation of crawling at any place in the tree by
 using an XPATH expression to obtain a reference to a node and then
 directing the crawler to continue at that node.
+
+## Misconceptions
+
+You can find stuff on the web that talks about "DOM parsing".  There
+is no such thing.  The DOM is an API that has nothing to do with
+parsing.
+
+But wait, you say; "DOM" stands for Document *Object* Model.  That's
+not an API, it's an abstract model of a structure!  Oracle
+[says so explicitly](http://docs.oracle.com/cd/B28359_01/appdev.111/b28394/adx_j_parser.htm#CCHCCEHA):
+"DOM is an in-memory tree representation of the structure of an XML
+document."  To which I reply: piffle!  The DOM is _entirely_ defined
+in terms of the DOM API.  The W3C and Java folks are just confused
+about the distinction between language, structure, and model.  The DOM
+is defined entirely in terms of an API; it's a *language* (i.e. API,
+aka signature).  The implementation behind a DOM API can have *any*
+structure, so long as it can support the DOM operations.  You can do
+this, at least in principle, with data structures that bear no
+resemblance to the DOM "object model".
+
+This confusion is enhanced by calling parsers "DOM parsers"
+(e.g. Mozilla's
+[DOMParser](https://developer.mozilla.org/en-US/docs/Web/API/DOMParser)),
+which "can parse XML or HTML source stored in a string into a DOM
+Document."  Well, it depends on what you mean by "DOM Document".  If
+you mean "something that supports the DOM API", then fine; but if you
+mean "an in-memory DOM (=tree?) representation of the source document,
+then, no.  What it does is parse an input document and translate it
+into *some* data structure, which an allied piece of software can
+access using the DOM *API*.  The internals of the data structre are
+*totally irrelevant*; what matters is that whatever it comes up with
+will be "understood" by the client-facing DOM API implementation
+responsible for turning DOM calls into data.
+
+Or to put it more bluntly: you could support the DOM API with a purely
+streaming parser, so long as you are willing to parse the thing
+repeatedly and store lots of state information.  That would be
+preposterous, but from the client perpective it would count as a "DOM
+Document".
+
+> TODO: this really has to do with adoption of an algebraic
+> perspective on programming and data structures.  Which sounds all
+> high-falootin' and fancy and all; but in fact it is incredibly
+> useful in practice.
+
+
+
+> Note that the DOM API is a pull API, not a third type of API, as is
+> sometimes claimed.  If you use a DOM API to manipulate an XML
+> document, you are responsible for managing traversal of the tree and
+> fetching data from it: the pull model - which means *active*
+> traversal.
+
 
