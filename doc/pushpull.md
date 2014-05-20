@@ -1,5 +1,7 @@
 # Parsing Strategies:  Push v. Pull v. ???
 
+> See also [Push, Pull, Next!](http://www.xml.com/pub/a/2005/07/06/tr.html) (Bob DuCharme)
+
 In the XML world, we have so-called "push" and "pull" parsing, and
 maybe something in between.  Strictly speaking this is an abuse of
 terminology, since whether you are pushing or pulling depends on your
@@ -126,11 +128,11 @@ to call the DOM API a model of anything; it's just a piece of
 language, a signature.  It would have been more accurate to call it
 the Document Algebra Signature or the like.
 
-
 > Note that the DOM API is a pull API, not a third type of API, as is
 > sometimes claimed.  If you use a DOM API to manipulate an XML
 > document, you are responsible for managing traversal of the tree and
 > fetching data from it: the pull model - which means *active*
 > traversal.
+
 
 
