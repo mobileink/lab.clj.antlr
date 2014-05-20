@@ -4,8 +4,6 @@ Using [ANTLR 4](http://www.antlr.org/) from Clojure.
 
 At the moment, this is just uses a leiningen project to organize ANTLR grammar development.
 
-Next up: implementing ANTLR listeners and visitors in Clojure, so we can walk the tree in Clojure.
-
 **WARNING** ANTRL 4 is substantially different from earlier versions,
 and many of the examples you can find by searching the internet are
 based on earlier versions.  Caveat lector.
@@ -43,6 +41,13 @@ $
 See section 1.2 "Executing ANTLR and Testing Recognizers" in [The Definitive ANTLR 4 Reference](http://pragprog.com/book/tpantlr2/the-definitive-antlr-4-reference).
 
 **Caveat:** It's "antlr", not "antrl".  ;)
+
+## Road map
+
+* implement ANTLR listeners and visitors in Clojure, so we can walk the tree in Clojure.
+* implement lein plugin
+* implement lein template
+
 
 ## See also
 
