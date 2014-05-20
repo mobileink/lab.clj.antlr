@@ -12,7 +12,7 @@ based on earlier versions.  Caveat lector.
 
 ## Usage
 
-Not yet packaged deployed as a jar; to experiment, clone the repo, then:
+Not yet packaged and deployed as a jar; to experiment, clone the repo, then:
 
 ```
 1.  $ ./clean.sh              ## clean out generated java parser source files in src/java/grammar
