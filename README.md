@@ -1,6 +1,10 @@
 # dsl.antlr
 
-Using antlr from Clojure
+Using [ANTLR](http://www.antlr.org/) from Clojure.
+
+At the moment, this is just uses a leiningen project to organize ANTLR grammar development.
+
+Next up: implementing ANTLR listeners and visitors in Clojure, so we can walk the tree in Clojure.
 
 
 ## Usage
