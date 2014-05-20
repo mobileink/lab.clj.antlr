@@ -111,6 +111,20 @@ Document".
 > high-falootin' and fancy and all; but in fact it is incredibly
 > useful in practice.
 
+It might be objected that this is just what "model" means in "Document
+Object Model": a formal, algebraic structure that is a model of the
+"object" structure of the document.  But I don't think that is
+accurate.  It gets things backwards.  In Ordinary Language, models
+represent reality: a map is a model of a territory.  The notion of DOM
+as a "document object model" (should that be parsed "(document object)
+model or (document (object model)?)" is like that: the DOM is a
+"picture" of the document.  But this is backwards.  Model theory
+reverses this relationship between language and world.  For example,
+the language of Group Theory is not a model of groups; just the
+opposite, different groups are models of the language.  So it won't do
+to call the DOM API a model of anything; it's just a piece of
+language, a signature.  It would have been more accurate to call it
+the Document Algebra Signature or the like.
 
 
 > Note that the DOM API is a pull API, not a third type of API, as is
