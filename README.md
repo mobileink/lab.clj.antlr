@@ -1,11 +1,14 @@
 # dsl.antlr
 
-Using [ANTLR](http://www.antlr.org/) from Clojure.
+Using [ANTLR 4](http://www.antlr.org/) from Clojure.
 
 At the moment, this is just uses a leiningen project to organize ANTLR grammar development.
 
 Next up: implementing ANTLR listeners and visitors in Clojure, so we can walk the tree in Clojure.
 
+**WARNING** ANTRL 4 is substantially different from earlier versions,
+and many of the examples you can find by searching the internet are
+based on earlier versions.  Caveat lector.
 
 ## Usage
 
@@ -38,3 +41,18 @@ $
 See section 1.2 "Executing ANTLR and Testing Recognizers" in [The Definitive ANTLR 4 Reference](http://pragprog.com/book/tpantlr2/the-definitive-antlr-4-reference).
 
 **Caveat:** It's "antlr", not "antrl".  ;)
+
+## See also
+
+[An ANTLR grammar for Clojure](https://github.com/antlr/grammars-v4/tree/master/clojure)
+is the basis of the  grammar we use here.
+
+[Using Antlr from Clojure](http://www.nickpascucci.com/blog/2014/03/01/using-antlr-from-clojure/)
+A blog post (March 2014) with a minimal example of how to parse Java files
+using ANTLR 4 from Clojure, without the lein infrastructure we use.
+
+[clj-antlr](https://github.com/aphyr/clj-antlr) is a more ambitious
+effort to Clojurize ANTLR.  By contrast, the goal of this project is
+limited to using Clojure to crawl the tree using standard ANTLR
+methods.
+
