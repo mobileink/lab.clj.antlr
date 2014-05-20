@@ -12,6 +12,8 @@ based on earlier versions.  Caveat lector.
 
 ## Usage
 
+Not yet packaged deployed as a jar; to experiment, clone the repo, then:
+
 ```
 1.  $ ./clean.sh              ## clean out generated java parser source files in src/java/grammar
 2.  $ ./antlr.sh Clojure.g4   ## generate java parser source files from src/grammar
