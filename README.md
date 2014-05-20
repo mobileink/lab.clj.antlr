@@ -35,6 +35,9 @@ See [Testing](doc/testing.md) to see how to use ANTLR's built-in test rig.
 [An ANTLR grammar for Clojure](https://github.com/antlr/grammars-v4/tree/master/clojure)
 is the basis of the  grammar we use here.
 
+[Getting Started with ANTRL v4](https://theantlrguy.atlassian.net/wiki/display/ANTLR4/Getting+Started+with+ANTLR+v4)
+by Terrence Parr, the maniac behind ANTLR (his words, not mine!)
+
 [Using Antlr from Clojure](http://www.nickpascucci.com/blog/2014/03/01/using-antlr-from-clojure/)
 A blog post (March 2014) with a minimal example of how to parse Java files
 using ANTLR 4 from Clojure, without the lein infrastructure we use.
