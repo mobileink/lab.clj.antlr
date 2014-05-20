@@ -44,7 +44,7 @@ The -gui option displays the the parse tree graphically in a gui window:
 ```
 Write to ps (!) file:
 ```
-./grun.sh org.mobileink.antlr.Clojure file -ps expr.ps
+./grun.sh org.mobileink.antlr.Clojure file -ps target/expr.ps
 (do (+ 1 2))
 ^D
 ...write parse tree graphic to expr.ps...
