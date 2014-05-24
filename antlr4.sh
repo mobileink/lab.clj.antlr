@@ -1,8 +1,16 @@
 #!/bin/sh
 
-## $ antlr4 -lib src/grammar -o src/java src/grammar/Clojure.g4
-
 ANTLR=$MAVEN_REPO/org/antlr
+
+usage(){
+	echo "usage: $ antlr4 <grammar>"
+	echo "where <grammar> is the name of a grammar file without the extension"
+	echo "assumption: all grammar files have extension .g4"
+	exit 1
+}
+
+# call usage() function if filename not supplied
+[[ $# -eq 0 ]] && usage
 
 (cd src/grammar; \
     java \
@@ -10,4 +18,5 @@ ANTLR=$MAVEN_REPO/org/antlr
     org.antlr.v4.Tool \
     -o ../../src/java/grammar \
     -package org.mobileink.antlr \
-    $*)
+    -visitor \
+    $*.g4)
