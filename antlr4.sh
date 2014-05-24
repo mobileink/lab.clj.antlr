@@ -5,7 +5,7 @@ ANTLR=$MAVEN_REPO/org/antlr
 usage(){
 	echo "usage: $ antlr4 <grammar>"
 	echo "where <grammar> is the name of a grammar file without the extension"
-	echo "assumption: all grammar files have extension .g4"
+	echo "requirement: grammar files must have extension .g4"
 	exit 1
 }
 
