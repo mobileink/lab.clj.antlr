@@ -1,3 +1,6 @@
+// copy before editing!
+// original: https://github.com/antlr/grammars-v4/blob/master/clojure/Clojure.g4
+
 /* Converted to ANTLR 4 by Terence Parr. Unsure of provence. I see
    it commited by matthias.koester for clojure-eclipse project on
    Oct 5, 2009:
@@ -21,11 +24,9 @@
 
 grammar Clojure;
 
-file: form* #ftest;
+file: list*;
 
-form: kw
-    | literal
-    | let_form
+form: literal
     | list
     | vector
     | map
@@ -33,18 +34,7 @@ form: kw
     | '#\'' SYMBOL // TJP added (get Var object instead of the value of a symbol)
     ;
 
-let_form: '(' let binding body ')';
-
-let: 'let' ;
-
-binding: '[' form* ']' ;
-
-body: form*;
-
-/* list: '(' form* ')' ; */
 list: '(' form* ')' ;
-
-kw: 'defn' | 'def' | 'do' ; // etc.
 
 vector: '[' form* ']' ;
 
@@ -71,14 +61,14 @@ reader_macro
     ;
 
 literal
-    : STRING # str
-    | NUMBER # nbr
-    | CHARACTER #char
-    | NIL #nil
-    | BOOLEAN #bool
-    | KEYWORD #keyw
-    | SYMBOL #sym
-    | PARAM_NAME #parm
+    : STRING
+    | NUMBER
+    | CHARACTER
+    | NIL
+    | BOOLEAN
+    | KEYWORD
+    | SYMBOL
+    | PARAM_NAME
     ;
 
 STRING : '"' ( ~'"' | '\\' '"' )* '"' ;
