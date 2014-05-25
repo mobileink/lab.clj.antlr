@@ -1,19 +1,16 @@
 // the null language - comments and whitespace only
 
-// CAVEAT: this grammar will produce ignorable warnings:
-
-// warning(155): nil.g4:20:26: rule 'WS' contains a lexer command with an unrecognized constant value; lexer interpreters may produce incorrect output
-// warning(155): nil.g4:34:34: rule 'COMMENT' contains a lexer command with an unrecognized constant value; lexer interpreters may produce incorrect output
-
 grammar nil;
 
-@lexer::members {
-public static final int WHITESPACE = 1;
-public static final int COMMENTS = 2;
-}
+import lex_wscomments ;
+
+// @lexer::members {
+// public static final int WHITESPACE = 1;
+// public static final int COMMENTS = 2;
+// }
 
 start: ;
 
-WS : [ \t\n\r] -> channel(WHITESPACE) ;
+// WS : [ \t\n\r] -> channel(WHITESPACE) ;
 
-COMMENT : ';' .*? '\n' -> channel(COMMENTS) ;
+// COMMENT : ';' .*? '\n' -> channel(COMMENTS) ;
