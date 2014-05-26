@@ -15,9 +15,10 @@
            [org.antlr.v4.runtime.misc TestRig]))
 
 
+;; WARNING: work in progress.  Use lex.clj for now
+
 ;; (defmacro import-by-name [name] `(import [~name]))
 ;; (defmacro new-k [klass] `(new ~(Class/forName klass)))
-
 
 ;; Lexer Javadoc: http://www.antlr.org/api/Java-master/org/antlr/v4/runtime/Lexer.html
 
