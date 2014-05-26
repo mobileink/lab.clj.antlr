@@ -1,4 +1,4 @@
-grammar hello_channel;
+grammar hello_channels;
 @lexer::members {
 public static final int WHITESPACE = 3;
 }

@@ -39,9 +39,9 @@
 
 (deftest hello-1
   (testing "minimal symbol"
-    (lex/lex-string "hello1" "abc def")))
+    (lex/lex-string "hello" "abc def")))
 
 (deftest hello-2
   (testing "minimal symbol"
-    (lex/lex-file "hello1" "test/data/hello.txt" 'start)))
+    (lex/lex-file "hello" "test/data/hello.txt")))
 
