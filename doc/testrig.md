@@ -1,4 +1,4 @@
-# Testing ANTLR Grammars
+# Testing with the ANTLR 4 TestRig
 
 Once you've compiled a lexer/parser as shown in the
 [README](../README.md), you can use ANTLR's
@@ -7,9 +7,15 @@ to display various views of the parse tree.  The first argument to
 TestRig is the name of a grammar (i.e. the name of the java package
 implementing the parser); the second argument is the name of a rule to
 be used to start parsing.  This means you can test parts of your
-grammar independently.
+grammar independently.  The optional third parameter is a filename; if
+you provide it, TestRig will feed its contents to the parser.  If you
+omit it (as in the following examples), you can enter text to be
+parsed on the command line, terminated with a CTRL-D.
 
-To show resulting tokens:
+> See [Testing ANTLR 4 Lexers/Parsers with Clojure](testing.clojure.md) to see how to test
+> from a repl or by running `lein test`.
+
+To show resulting tokens use the `-tokens` flag:
 
 ```
 $ ./grun.sh org.mobileink.antlr.Clojure file -tokens
@@ -27,7 +33,9 @@ $ ./grun.sh org.mobileink.antlr.Clojure file -tokens
 [@8,8:7='<EOF>',<-1>,2:8]
 $
 ```
-Show the tree as nested syntax:
+
+Show the tree as nested syntax use `-tree`:
+
 ```
 $ ./grun.sh org.mobileink.antlr.Clojure file -tree
 (do (+ 1 2))
@@ -35,14 +43,18 @@ $ ./grun.sh org.mobileink.antlr.Clojure file -tree
 (file (form (list ( (form (kw do)) (form (list ( (form (literal +)) (form (literal 1)) (form (literal 2)) ))) ))))
 $
 ```
+
 The -gui option displays the the parse tree graphically in a gui window:
+
 ```
 ./grun.sh org.mobileink.antlr.Clojure file -gui
 (do (+ 1 2))
 ^D
 ...gui launches...
 ```
+
 Write to ps (!) file:
+
 ```
 ./grun.sh org.mobileink.antlr.Clojure file -ps target/expr.ps
 (do (+ 1 2))
@@ -54,22 +66,23 @@ See sections 1.2 "Executing ANTLR and Testing Recognizers" and 3.2
 "Testing the Generated Parser" in
 [The Definitive ANTLR 4 Reference](http://pragprog.com/book/tpantlr2/the-definitive-antlr-4-reference).
 
-## TestRig -tokens Output
+## Interpretation of TestRig -tokens Output
 
 #### Whitespace discarded
 
-Compile the hello1 grammar:
+From the project root, compile the [hello](../src/antlr/hello.g4) grammar:
 
 ```
-$ ./regen.sh hello1
+$ ./regen.sh hello
 ```
 
-Now take a look at the test file `test/hello.txt`, and note that the
-input text is on line 2 of the file, and starts at the fourth character
-position (counting from 0).  Run the test rig against this file:
+Now take a look at the test file [test/data/hello.txt](../test/data/hello.txt),
+and note that the input text is on line 2 of the file, and starts at
+the fourth character position (counting from 0).  Run the test rig
+against this file:
 
 ```
-$ ./grun.sh hello1 start hello.txt
+$ ./grun.sh hello start hello.txt
 ```
 
 The result should look like this:
@@ -93,25 +106,33 @@ Line one of this output:
 
 #### Whitespace retained
 
-Now compile hello2:
+Now compile [hello_channels](../src/antlr/hello_channels.g4):
 
 ```
-$ ./grun.sh hello1 start hello.txt
+$ ./regen sh hello_channels
 ```
 
 This time you should see a warning:
 
 ```
-warning(155): hello2.g4:8:27: rule 'WS' contains a lexer command with an unrecognized constant value; lexer interpreters may produce incorrect output
+warning(155): hello_channels.g4:8:27: rule 'WS' contains a lexer command with an unrecognized constant value; lexer interpreters may produce incorrect output
 ```
 
 Ignore this; it is caused by the use of a lexical "channel", which
 this example is designed to illustrate.
 
-Now run the test rig again:
+> Channels allow the lexer to pass selected tokens to the parser as
+"hidden" streams of tokens; this allows you to retain e.g. whitespace
+and comments.  They get passed on separate channels, which means the
+parser can ignore them and stick to the business of parsing the
+meaningful tokens; but it has the option of fetching tokens from the
+hidden channels.  See section 12.1, "Broadcasting Tokens on Different
+Channels", p. 204 of DA4R.
+
+Now test the parser:
 
 ```
-$ ./grun.sh hello2 start hello.txt
+$ ./grun.sh hello_channels start "hello.txt"
 ```
 
 This time the output should look like this:
@@ -125,13 +146,13 @@ This time the output should look like this:
 [@5,16:15='<EOF>',<-1>,3:15]
 ```
 
-The difference is that the hello1 grammar discards whitespace:
+The difference is that the hello grammar discards whitespace:
 
 ```
 WS : [ \t\r\n]+ -> skip ; // skip spaces, tabs, newlines, \r (Windows)
 ```
 
-whereas hello2 retains it, passing it to the parser in a "channel":
+whereas hello_channels retains it, passing it to the parser in a "channel":
 
 ```
 @lexer::members {
@@ -142,7 +163,7 @@ WS : [ \t\r\n]+ -> channel(WHITESPACE) ; // send spaces, tabs, newlines, \r (Win
 ```
 
 The `channel=3` clauses in the test rig output indicates which strings
-are recognized by the WS rule and passed on channel 3.
+are recognized by the WS rule and passed from lexer on channel 3.
 
 
 
