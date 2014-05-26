@@ -3,12 +3,16 @@
 This project is intended as a kind of research workbench for exploring
 [ANTLR 4](http://www.antlr.org/) with [Clojure](http://clojure.org/).
 It will never be published as a product, so it does not have an
-alpha-beta-production status.  What's here seems to work, so if you
-want to use it, just clone it and hammer away.
+alpha-beta-production status.  What's included here is enough (I hope)
+machinery and documentation to get you started working with ANTLR
+grammars right away, without having to worry about the boring details
+of running the ANTLR tools, organizing your code, etc.  What's here
+seems to work, so if you want to use it, just clone it and hammer
+away.
 
 The original motivation was to develop a formal grammar for Clojure,
 so some of the examples are specific to that language.  But the tools
-and documentation here are language-agnostcid; ANTLR 4 can be used to
+and documentation here are language-agnostic; ANTLR 4 can be used to
 develop any grammar, and you can use the tools here to experiment with
 any grammar.
 
@@ -21,22 +25,30 @@ many examples, including a
 and many of the examples you can find by searching the internet are
 based on earlier versions.  Caveat lector.
 
+See the docs in [doc](doc/) for more information.
+
 ## Usage
 
-Not yet packaged and deployed as a jar; to experiment, clone the repo, then:
+To get started, clone the repo and then from the project root run:
 
 ```
-1.  $ ./clean.sh              ## clean out generated java parser source files in src/java/grammar
-2.  $ ./antlr.sh Clojure.g4   ## generate java parser source files from src/grammar/Clojure.g4
-3.  $ lein clean              ## clean out target
-4.  $ lein javac              ## compile parser source to target/classes
+1.  $ ./antlr.sh hello.g4     ## generate java parser source files from src/grammar/Clojure.g4
+2.  $ lein javac              ## compile parser source to target/classes
+3.  $ ./grun.sh hello start "hello.txt" ## run ANTLR TestRig against parser and test file
 ```
 
-See [Testing Grammars](doc/testing.grammars.md) to see how to use
-ANTLR's built-in test rig to interactively test grammar
-specifications.
+`grun.sh` runs ANTLR's TestRig; see [Testing Grammars](doc/testrig.md)
+to interactively test grammar specifications.
 
 **Caveat:** It's "antlr", not "antrl".  ;)
+
+## Lexing
+
+See [Lexing](doc/lexing.md).
+
+## Parsing
+
+See [Parsing](doc/parsing.md).
 
 ## Crawling the tree
 
