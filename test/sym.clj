@@ -1,4 +1,4 @@
-(ns sym-test
+(ns sym
   (:import [org.antlr.v4.runtime DefaultErrorStrategy]
            [symLexer])
   (:require [clojure.test :refer :all]
@@ -37,7 +37,11 @@
 
 (use-fixtures :once test-setup)
 
-(deftest sym01
-  (testing "minimal symbol"
-    (lex/lex-string "a//b(c" "sym")))
-    ;; (is (= 0 1))))
+;; (deftest sym01
+;;   (testing "minimal symbol"
+;;     (lex/lex-string "abc def" "sym")))
+
+(deftest symfile-01
+  (testing "minimal symbol file"
+    (lex/lex-file "sym" "test/data/sym/sym902.clj")))
+
