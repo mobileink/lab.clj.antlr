@@ -1,11 +1,21 @@
-# dsl.antlr
+# rsch.antlr
 
-Using [ANTLR 4](http://www.antlr.org/) from Clojure.
+This project is intended as a kind of research workbench for exploring
+[ANTLR 4](http://www.antlr.org/) with [Clojure](http://clojure.org/).
+It will never be published as a product, so it does not have an
+alpha-beta-production status.  What's here seems to work, so if you
+want to use it, just clone it and hammer away.
 
-At the moment, this is just uses a leiningen project to organize ANTLR grammar development.
+The original motivation was to develop a formal grammar for Clojure,
+so some of the examples are specific to that language.  But the tools
+and documentation here are language-agnostcid; ANTLR 4 can be used to
+develop any grammar, and you can use the tools here to experiment with
+any grammar.
 
-[An ANTLR grammar for Clojure](https://github.com/antlr/grammars-v4/tree/master/clojure)
-is the basis of the  grammar we use here.
+See the
+[ANTLR Grammar Repository](https://github.com/antlr/grammars-v4) for
+many examples, including a
+[rudimentary Clojure grammar](https://github.com/antlr/grammars-v4/tree/master/clojure).
 
 **WARNING** ANTRL 4 is substantially different from earlier versions,
 and many of the examples you can find by searching the internet are
