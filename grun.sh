@@ -24,6 +24,8 @@ ANTLR=$MAVEN_REPO/org/antlr
 FILE=
 OUTFMT=-tokens
 
+#set -x
+
 if [ -n "$3" ]
 then
     case $3 in

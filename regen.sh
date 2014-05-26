@@ -11,14 +11,15 @@ usage(){
 [[ $# -eq 0 ]] && usage
 
 FILE=
-if [ -f "src/grammar/$1.g4" ]
+if [ -f "src/antlr/$1.g4" ]
 then
-    FILE=src/grammar/$1.g4
+    FILE=src/antlr/$1.g4
 else
-    echo "No file src/grammar/$1.g4"
+    echo "No file src/antlr/$1.g4"
     exit 1
 fi
 
 set -x
+## no lein clean, since we may want to test multiple parsers
 ./clean.sh && ./antlr4.sh $1 && lein javac;
 

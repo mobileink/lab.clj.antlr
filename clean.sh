@@ -4,4 +4,4 @@
 
 ## TODO: move to lein plugin
 
-rm -rf src/java/grammar
+rm -rf src/java
