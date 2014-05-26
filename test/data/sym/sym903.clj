@@ -1,0 +1,11 @@
+;FAIL
+:a`x
+:a~x
+:a@x
+:a^x
+:a\x
+:a"x
+:a:
+:a::b
+:a;b
+:a,b

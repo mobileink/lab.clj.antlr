@@ -1,11 +1,2 @@
-;FAIL
+;FAIL sym grammar
 :a`x
-:a~x
-:a@x
-:a^x
-:a\x
-:a"x
-:a:
-:a::b
-:a;b
-:a,b
