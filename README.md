@@ -2,10 +2,11 @@
 
 This project is intended as a kind of research workbench for exploring
 [ANTLR 4](http://www.antlr.org/) with [Clojure](http://clojure.org/).
-It will never be published as a product, so it does not have an
-alpha-beta-production status.  What's included here is enough (I hope)
-machinery and documentation to get you started working with ANTLR
-grammars right away, without having to worry about the
+I do not expect to ever publish it as a product, so it does not have
+an alpha-beta-production status.  But I do expect to add to it from
+time to time.  What's included here is enough (I hope) machinery and
+documentation to get you started working with ANTLR grammars right
+away, without having to worry about the
 [boring details of running the ANTLR tools, organizing your code, etc](https://theantlrguy.atlassian.net/wiki/display/ANTLR4/Getting+Started+with+ANTLR+v4)
 ).  What's here seems to work, so if you want to use it, just clone it
 and hammer away.
@@ -14,7 +15,8 @@ The original motivation was to develop a formal grammar for Clojure,
 so some of the examples are specific to that language.  But the tools
 and documentation here are language-agnostic; ANTLR 4 can be used to
 develop any grammar, and you can use the tools here to experiment with
-any grammar.
+any grammar.  Once I get a Clojure grammar worked up it will go in a
+different repo.
 
 See the
 [ANTLR Grammar Repository](https://github.com/antlr/grammars-v4) for
