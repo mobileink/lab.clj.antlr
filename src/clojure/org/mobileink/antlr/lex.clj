@@ -42,17 +42,12 @@
       (.fill tokens)
 ;      (println "tokens: " (class tokens))
       (let
-          [tseq (iterator-seq (.iterator (.getTokens tokens)))]
+          [seqtoks (iterator-seq (.iterator (.getTokens tokens)))]
         (do
           (doall (map (fn [t] (print (format "%s\n" (.toString t))))
-                      tseq))
-          )))
-      ;;(doall (map #(println (.getTokenIndex %) (.getType %) (.toString %)) seqtoks))
-      nil))
-
-(defmulti lex-string
-
-  )
+                      seqtoks))
+          ))))
+  nil)
 
 (defn lex-string
   [^String grammar ;; e.g. "org.mobileink.antlr.sym"
@@ -67,16 +62,18 @@
         strinput (ANTLRInputStream. the-string)
         lxr (eval `(new ~(Class/forName lexname) nil))
         foo (.setInputStream lxr strinput)
-        tokens (do (.reset lxr) (.getAllTokens lxr))
+        ;; tokens (do (.reset lxr) (.getAllTokens lxr))
+        tokens (CommonTokenStream. lxr)
         ;; parsername (str grammar "Parser")
         ;; parsens (import-by-name parsername)
         ;;lex (.setInputStream (symbol (new (str grammar "Lexer"))) input)
         ]
     (do
-      (let [seqtoks (iterator-seq (.iterator tokens))]
+      (.fill tokens)
+      (let
+          [seqtoks (iterator-seq (.iterator (.getTokens tokens)))]
         (do
-          (doall (map #(println (.getTokenIndex %) (.toString %)) seqtoks))
-      ))))
-  ;;(println "end")
-;;  (println "ns" (find-ns (symbol lexname))) ;;'org.mobileink.antlr.Hello1Lexer))
-  )
+          (doall (map #(println (.getTokenIndex %) (.toString %))
+                      seqtoks))
+          ))))
+  nil)
