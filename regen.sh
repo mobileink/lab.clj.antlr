@@ -20,5 +20,5 @@ else
 fi
 
 set -x
-./clean.sh && ./antlr4.sh $1 && lein clean && lein javac;
+./clean.sh && ./antlr4.sh $1 && lein javac;
 
