@@ -6,8 +6,10 @@ testing the sym grammar.
 To test:
 
 ```
-$ ./grun.sh sym 'start sym/sym01.clj
+$ ./grun.sh sym start sym/sym01.clj
 ```
+
+(Note: no ' on start symbol)
 
 or
 
