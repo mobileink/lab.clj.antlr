@@ -184,6 +184,15 @@ ID_NAME
     :  ID_START_CHAR ID_NAME_CHAR*
     ;
 
+// " '/' has special meaning, it can be used once in the middle of a symbol to 
+// separate the namespace from the name, e.g. my-namespace/foo. 
+// '/' by itself names the division function."  http://clojure.org/reader#The Reader--Reader forms
+
+// see "The Form of a Binary" http://docs.oracle.com/javase/specs/jls/se7/html/jls-13.html#jls-13.1
+// and "Fully Qualified Names and Canonical Names" http://docs.oracle.com/javase/specs/jls/se7/html/jls-6.html#jls-6.7
+// an FQN uses '.' separators:  foo.bar.baz, as opposed to "path" syntax using '/' foo/bar/baz
+// clojure symbols seem to use FQNs for the namespace and name parts, with one '/' splitting them.
+
 ID_QUALIFIED_NAME
     :  ID_NS '/' ID_NAME
     ;
