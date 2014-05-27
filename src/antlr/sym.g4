@@ -72,10 +72,9 @@ start: ID_SYMBOL*;
 // STARTCHAR: ~[0-9/] ;
 
 
-// from Java8.g4
-
-
 // delims
+
+DELIM : LPAREN | RPAREN | LBRACE | RBRACE | LBRACK | RBRACK ;
 
 LPAREN          : '(';
 RPAREN          : ')';
@@ -83,7 +82,37 @@ LBRACE          : '{';
 RBRACE          : '}';
 LBRACK          : '[';
 RBRACK          : ']';
-SEMI            : ';';
+
+// macro chars - see clojure.lang.LispReader
+
+MACRO_CHAR : MC_QUOTE | MC_QUOTESYN | MC_UNQUOTE | MC_COMMENT | MC_CHARLIT | MC_DEREF | MC_META | MC_DISPATCH | MC_STRING | MC_ARG ;
+
+MC_QUOTE    : '\'' ;
+MC_QUOTESYN : '`'  ;
+MC_UNQUOTE  : '~'  ;
+MC_COMMENT  : ';'  ;
+MC_CHARLIT  : '\\' ;
+MC_DEREF    : '@'  ;
+MC_META     : '^'  ;
+MC_DISPATCH : '#'  ;
+MC_STRING   : '"'  ;
+MC_ARG      : '%'  ;
+
+// dispatch macro chars  -  micro-syntax for regex patters, var quote, etc.
+
+DISPATCH_MACRO_CHAR = DMC_META | DMC_VAR | DMC_REGEX | DMC_FN | DMC_SET | DMC_EVAL | DMC_COMMENT ;
+
+DMC_META    : '^'  ;
+DMC_VAR     : '\'' ;
+DMC_REGEX   : '"'  ;
+DMC_FN      : '('  ;
+DMC_SET     : '{'  ;
+DMC_EVAL    : '='  ;   //  unsupported?  #=(+ 1 2) => 3
+DMC_COMMENT : '!'  ;
+// '<' = UnreadableReader
+// '_' = DiscardReader
+
+
 COMMA           : ',';
 DOT             : '.';
 
