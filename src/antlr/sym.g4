@@ -140,8 +140,8 @@ DMC_COMMENT : '!'  ;
 COMMA           : ',';
 DOT             : '.';
 
-THREAD-FIRST    : '->'  ;
-THREAD-LAST     : '->>' ;
+THREAD_FIRST    : '->'  ;
+THREAD_LAST     : '->>' ;
 
 NOTEQ           : 'not=';
 EQEQ            : '==';
