@@ -104,6 +104,7 @@ RBRACK          : ']';
 //	return (ch != '#' && ch != '\'' && ch != '%' && isMacro(ch));
 //}
 
+// conclusion: symbols can contain non-terminating macro chars # ' and % but no other macro chars
 
 // macro chars - see clojure.lang.LispReader
 
