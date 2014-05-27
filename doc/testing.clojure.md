@@ -1,6 +1,6 @@
 # Testing ANTLR 4 Lexers/Parsers with Clojure
 
-## Lexing
+## Lex testing
 
 See [Lexing](lexing.md).
 
