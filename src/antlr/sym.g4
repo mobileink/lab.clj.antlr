@@ -72,10 +72,9 @@ start: ID_SYMBOL*;
 // STARTCHAR: ~[0-9/] ;
 
 
-// from Java8.g4
-
-
 // delims
+
+DELIM : LPAREN | RPAREN | LBRACE | RBRACE | LBRACK | RBRACK ;
 
 LPAREN          : '(';
 RPAREN          : ')';
@@ -83,49 +82,89 @@ LBRACE          : '{';
 RBRACE          : '}';
 LBRACK          : '[';
 RBRACK          : ']';
-SEMI            : ';';
+
+
+//  MACROS
+
+// in clojure.lang.LispReader, we have terminating and non-terminating macro chars
+
+// read calls readToken which reads chars in a loop until:
+//		if(ch == -1 || isWhitespace(ch) || isTerminatingMacro(ch))
+//			{
+//			unread(r, ch);
+//			return sb.toString();
+//			}
+//...
+//  then it calls interpretToken on the token string which (maybe) calls matchSymbols which matches symbolPat (see above)
+
+//static private boolean isMacro(int ch){
+//	return (ch < macros.length && macros[ch] != null);
+//}
+//static private boolean isTerminatingMacro(int ch){
+//	return (ch != '#' && ch != '\'' && ch != '%' && isMacro(ch));
+//}
+
+// conclusion: symbols can contain non-terminating macro chars # ' and % but no other macro chars
+
+// macro chars - see clojure.lang.LispReader
+
+MACRO_CHAR : MC_QUOTE | MC_QUOTESYN | MC_UNQUOTE | MC_COMMENT | MC_CHARLIT | MC_DEREF | MC_META | MC_DISPATCH | MC_STRING | MC_ARG ;
+
+MACRO_CHAR_NON_TERMINATING : MC_DISPATCH | MC_QUOTE | MC_ARG ;
+
+MC_QUOTE    : '\'' ;  // non-terminating
+MC_QUOTESYN : '`'  ;
+MC_UNQUOTE  : '~'  ;
+MC_COMMENT  : ';'  ;
+MC_CHARLIT  : '\\' ;
+MC_DEREF    : '@'  ;
+MC_META     : '^'  ;
+MC_DISPATCH : '#'  ;  // non-terminating
+MC_STRING   : '"'  ;
+MC_ARG      : '%'  ;  // non-terminating
+
+// dispatch macro chars  -  micro-syntax for regex patters, var quote, etc.
+
+DISPATCH_MACRO_CHAR = DMC_META | DMC_VAR | DMC_REGEX | DMC_FN | DMC_SET | DMC_EVAL | DMC_COMMENT ;
+
+DMC_META    : '^'  ;
+DMC_VAR     : '\'' ;
+DMC_REGEX   : '"'  ;
+DMC_FN      : '('  ;
+DMC_SET     : '{'  ;
+DMC_EVAL    : '='  ;   //  unsupported?  #=(+ 1 2) => 3
+DMC_COMMENT : '!'  ;
+// '<' = UnreadableReader
+// '_' = DiscardReader
+
 COMMA           : ',';
 DOT             : '.';
 
-// §3.12 Operators
+THREAD_FIRST    : '->'  ;
+THREAD_LAST     : '->>' ;
 
-ASSIGN          : '=';
+NOTEQ           : 'not=';
+EQEQ            : '==';
+EQ              : '=';
+GE              : '>=';
 GT              : '>';
+LE              : '<=';
 LT              : '<';
 BANG            : '!';
-TILDE           : '~';
 QUESTION        : '?';
-COLON           : ':';
-EQUAL           : '==';
-LE              : '<=';
-GE              : '>=';
-NOTEQUAL        : '!=';
-AND             : '&&';
-OR              : '||';
-INC             : '++';
-DEC             : '--';
+ANDAND          : '&&';
+AND             : '&';
+OROR            : '||';
+OR              : '|';
+//INC             : '++';
+//DEC             : '--';
 ADD             : '+';
 SUB             : '-';
 MUL             : '*';
 DIV             : '/';
-BITAND          : '&';
-BITOR           : '|';
-CARET           : '^';
-MOD             : '%';
 
-ADD_ASSIGN      : '+=';
-SUB_ASSIGN      : '-=';
-MUL_ASSIGN      : '*=';
-DIV_ASSIGN      : '/=';
-AND_ASSIGN      : '&=';
-OR_ASSIGN       : '|=';
-XOR_ASSIGN      : '^=';
-MOD_ASSIGN      : '%=';
-LSHIFT_ASSIGN   : '<<=';
-RSHIFT_ASSIGN   : '>>=';
-URSHIFT_ASSIGN  : '>>>=';
 
-// sym regex: [:]?([\\D&&[^/]].*/)?(/|[\\D&&[^/]][^/]*)
+// LispReader symbolPat regex: [:]?([\\D&&[^/]].*/)?(/|[\\D&&[^/]][^/]*)
 
 ID_SYMBOL
     :  ID_KW
@@ -145,13 +184,22 @@ ID_NAME
     :  ID_START_CHAR ID_NAME_CHAR*
     ;
 
+// " '/' has special meaning, it can be used once in the middle of a symbol to 
+// separate the namespace from the name, e.g. my-namespace/foo. 
+// '/' by itself names the division function."  http://clojure.org/reader#The Reader--Reader forms
+
+// see "The Form of a Binary" http://docs.oracle.com/javase/specs/jls/se7/html/jls-13.html#jls-13.1
+// and "Fully Qualified Names and Canonical Names" http://docs.oracle.com/javase/specs/jls/se7/html/jls-6.html#jls-6.7
+// an FQN uses '.' separators:  foo.bar.baz, as opposed to "path" syntax using '/' foo/bar/baz
+// clojure symbols seem to use FQNs for the namespace and name parts, with one '/' splitting them.
+
 ID_QUALIFIED_NAME
     :  ID_NS '/' ID_NAME
     ;
 
 fragment
-ID_SYM
-    :  [\!#$%&*-_+=|\':?/>.<]
+ID_SYM_CHAR   // "other" chars excluding MACRO_CHARs and DISPATCH_MACRO_CHARs ???
+    :  [!$#&*-_+=|:?/>.<]   // NB: '#' allowed inside ID:  (def a#b) => #'user/a#b
     ;
 
 fragment
