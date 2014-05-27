@@ -83,20 +83,44 @@ RBRACE          : '}';
 LBRACK          : '[';
 RBRACK          : ']';
 
+
+//  MACROS
+
+// in clojure.lang.LispReader, we have terminating and non-terminating macro chars
+
+// read calls readToken which reads chars in a loop until:
+//		if(ch == -1 || isWhitespace(ch) || isTerminatingMacro(ch))
+//			{
+//			unread(r, ch);
+//			return sb.toString();
+//			}
+//...
+//  then it calls interpretToken on the token string which (maybe) calls matchSymbols which matches symbolPat (see above)
+
+//static private boolean isMacro(int ch){
+//	return (ch < macros.length && macros[ch] != null);
+//}
+//static private boolean isTerminatingMacro(int ch){
+//	return (ch != '#' && ch != '\'' && ch != '%' && isMacro(ch));
+//}
+
+
 // macro chars - see clojure.lang.LispReader
 
 MACRO_CHAR : MC_QUOTE | MC_QUOTESYN | MC_UNQUOTE | MC_COMMENT | MC_CHARLIT | MC_DEREF | MC_META | MC_DISPATCH | MC_STRING | MC_ARG ;
 
-MC_QUOTE    : '\'' ;
+MACRO_CHAR_NON_TERMINATING : MC_DISPATCH | MC_QUOTE | MC_ARG ;
+
+MC_QUOTE    : '\'' ;  // non-terminating
 MC_QUOTESYN : '`'  ;
 MC_UNQUOTE  : '~'  ;
 MC_COMMENT  : ';'  ;
 MC_CHARLIT  : '\\' ;
 MC_DEREF    : '@'  ;
 MC_META     : '^'  ;
-MC_DISPATCH : '#'  ;
+MC_DISPATCH : '#'  ;  // non-terminating
 MC_STRING   : '"'  ;
-MC_ARG      : '%'  ;
+MC_ARG      : '%'  ;  // non-terminating
 
 // dispatch macro chars  -  micro-syntax for regex patters, var quote, etc.
 
@@ -111,7 +135,6 @@ DMC_EVAL    : '='  ;   //  unsupported?  #=(+ 1 2) => 3
 DMC_COMMENT : '!'  ;
 // '<' = UnreadableReader
 // '_' = DiscardReader
-
 
 COMMA           : ',';
 DOT             : '.';
