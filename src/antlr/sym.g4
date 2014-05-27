@@ -179,8 +179,8 @@ ID_QUALIFIED_NAME
     ;
 
 fragment
-ID_SYM
-    :  [\!#$%&*-_+=|\':?/>.<]
+ID_SYM_CHAR   // "other" chars excluding MACRO_CHARs and DISPATCH_MACRO_CHARs ???
+    :  [!$#&*-_+=|:?/>.<]   // NB: '#' allowed inside ID:  (def a#b) => #'user/a#b
     ;
 
 fragment
