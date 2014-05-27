@@ -13,7 +13,7 @@ See [Lexing](lexing.md).
 
 ### repl
 
-From the project root: start a repl.  The load and alias the tools for
+From the project root: start a repl.  Then load and alias the tools for
 easy reference.
 
 ```
