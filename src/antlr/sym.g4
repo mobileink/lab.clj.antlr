@@ -140,45 +140,31 @@ DMC_COMMENT : '!'  ;
 COMMA           : ',';
 DOT             : '.';
 
-// §3.12 Operators
+THREAD-FIRST    : '->'  ;
+THREAD-LAST     : '->>' ;
 
-ASSIGN          : '=';
+NOTEQ           : 'not=';
+EQEQ            : '==';
+EQ              : '=';
+GE              : '>=';
 GT              : '>';
+LE              : '<=';
 LT              : '<';
 BANG            : '!';
-TILDE           : '~';
 QUESTION        : '?';
-COLON           : ':';
-EQUAL           : '==';
-LE              : '<=';
-GE              : '>=';
-NOTEQUAL        : '!=';
-AND             : '&&';
-OR              : '||';
-INC             : '++';
-DEC             : '--';
+ANDAND          : '&&';
+AND             : '&';
+OROR            : '||';
+OR              : '|';
+//INC             : '++';
+//DEC             : '--';
 ADD             : '+';
 SUB             : '-';
 MUL             : '*';
 DIV             : '/';
-BITAND          : '&';
-BITOR           : '|';
-CARET           : '^';
-MOD             : '%';
 
-ADD_ASSIGN      : '+=';
-SUB_ASSIGN      : '-=';
-MUL_ASSIGN      : '*=';
-DIV_ASSIGN      : '/=';
-AND_ASSIGN      : '&=';
-OR_ASSIGN       : '|=';
-XOR_ASSIGN      : '^=';
-MOD_ASSIGN      : '%=';
-LSHIFT_ASSIGN   : '<<=';
-RSHIFT_ASSIGN   : '>>=';
-URSHIFT_ASSIGN  : '>>>=';
 
-// sym regex: [:]?([\\D&&[^/]].*/)?(/|[\\D&&[^/]][^/]*)
+// LispReader symbolPat regex: [:]?([\\D&&[^/]].*/)?(/|[\\D&&[^/]][^/]*)
 
 ID_SYMBOL
     :  ID_KW
