@@ -1,0 +1,40 @@
+;; Clojure symbol grammar test 1
+
+;; test starting chars: all ascii printables in order
+
+!abc/x  ;PASS
+"abc/x  ;FAIL
+#abc/x  ;PASS
+$abc/x  ;PASS
+%abc/  ;PASS
+&abc/  ;PASS
+'abc/  ;PASS
+(abc/  ;FAIL
+)abc/  ;FAIL
+*abc/  ;PASS
++abc/  ;PASS
+,abc/  ;FAIL
+-abc/  ;PASS
+.abc/ ;PASS
+/abc/  ;FAIL
+0abc/  ;FAIL
+:abc/  ;PASS
+;abc/  ;FAIL
+<abc/  ;PASS
+=abc/  ;PASS
+>abc/  ;PASS
+?abc/  ;PASS
+@abc/  ;FAIL
+Xabc/x  ;PASS
+[abc/  ;FAIL
+\abc/  ;PASS
+]abc/  ;FAIL
+^abc/  ;FAIL
+_abc/  ;PASS
+`abc/  ;PASS
+xabc/x  ;PASS
+{abc/  ;FAIL
+|abc/  ;PASS
+}abc/  ;FAIL
+~abc/  ;FAIL
+

@@ -1,0 +1,310 @@
+/*
+http://clojure.org/reader
+
+SYMBOLS and KEYWORDS
+
+Symbols begin with a non-numeric character and can contain
+alphanumeric characters and *, +, !, -, _, and ? (other characters
+will be allowed eventually, but not all macro characters have been
+determined). '/' has special meaning, it can be used once in the
+middle of a symbol to separate the namespace from the name,
+e.g. my-namespace/foo. '/' by itself names the division function. '.'
+has special meaning - it can be used one or more times in the middle
+of a symbol to designate a fully-qualified class name,
+e.g. java.util.BitSet, or in namespace names. Symbols beginning or
+ending with '.' are reserved by Clojure. Symbols containing / or . are
+said to be 'qualified'. Symbols beginning or ending with ':' are
+reserved by Clojure. A symbol can contain one or more non-repeating
+':'s.
+*/
+
+// code:  src/jvm/clojure/lang/LispReader.java
+
+// static Pattern symbolPat =
+//  Pattern.compile("[:]?([\\D&&[^/]].*/)?(/|[\\D&&[^/]][^/]*)");
+
+/*
+Java regex syntax:
+http://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html
+
+\D = non-digit = [^0-9]
+ANTLR:  ~[0-9]
+[a-z&&[^bc]] 	a through z, except for b and c: [ad-z] (subtraction)
+ANTLR: [ad-z]
+
+so [\\D&&[^/]] matches any non-digit EXCEPT '/', i.e. non-digits-minus-/
+ANTLR:  ~[0-9/]
+last clause (/|[\\D&&[^/]][^/]*) means
+ "either '/' OR one non-digits-minus-/, followed by zero or more any-minus-/
+ANTLR: (('/' | ~[0-9/])[^/]*)
+
+let STARTCHAR = any char that is neither a digit nor '/'
+*/
+
+// then "[:]?([\\D&&[^/]].*/)?(/|[\\D&&[^/]][^/]*)" means:
+
+/*
+// maybe start with ':' [:]?
+//     ANTRL: ':'?
+*/
+/* then maybe: group 1 (ns part): ([\\D&&[^/]].*/)? */
+/*
+//     STARTCHAR followed by any number of any-char, followed by '/'
+//     ANTLR: (~[0-9/].*/)?
+// then finally group 2 (local name part): (/|[\\D&&[^/]][^/]*)
+//     either
+//         '/'
+//     OR
+//         STARTCHAR followed by any number of any char excluding '/'
+//     ANTLR: (('/' | ~[0-9/])~[/]*)
+
+// this gives us:
+
+// RES : ';PASS' | ';FAIL' ;
+
+// SYMBOL : Identifier ;
+// SYMBOL : ':'? PFX? NAME ;
+// PFX    : NS '/' ;
+// NS     : STARTCHAR ~[()[\]{}]* ;
+// NAME   : '/' | STARTCHAR+ ; // .*? ;
+// STARTCHAR: ~[0-9/] ;
+*/
+
+
+
+// " '/' has special meaning, it can be used once in the middle of a symbol to
+// separate the namespace from the name, e.g. my-namespace/foo.
+// '/' by itself names the division function."  http://clojure.org/reader#The Reader--Reader forms
+
+// see "The Form of a Binary" http://docs.oracle.com/javase/specs/jls/se7/html/jls-13.html#jls-13.1
+// and "Fully Qualified Names and Canonical Names" http://docs.oracle.com/javase/specs/jls/se7/html/jls-6.html#jls-6.7
+// an FQN uses '.' separators:  foo.bar.baz, as opposed to "path" syntax using '/' foo/bar/baz
+// clojure symbols seem to use FQNs for the namespace and name parts, with one '/' splitting them.
+
+
+
+/****************************************************************/
+
+/*
+
+     MACRO CHARS
+
+in clojure.lang.LispReader, we have terminating and non-terminating macro chars
+
+read calls readToken which reads chars in a loop until:
+		if(ch == -1 || isWhitespace(ch) || isTerminatingMacro(ch))
+			{
+			unread(r, ch);
+			return sb.toString();
+			}
+...
+
+then it calls interpretToken on the token string which (maybe) calls
+matchSymbols which matches symbolPat regex (see above)
+
+static private boolean isMacro(int ch){
+	return (ch < macros.length && macros[ch] != null);
+}
+static private boolean isTerminatingMacro(int ch){
+	return (ch != '#' && ch != '\'' && ch != '%' && isMacro(ch));
+}
+
+conclusion: symbols can contain non-terminating macro chars #, ' and %
+but no other macro chars
+
+macro chars - see clojure.lang.LispReader
+*/
+
+
+
+Printable ASCII:
+
+32	040	20	00100000	 	&#32;	 	Space
+33	041	21	00100001	!	&#33;	 	Exclamation mark
+34	042	22	00100010	"	&#34;	&quot;	Double quotes
+35	043	23	00100011	#	&#35;	 	Number
+36	044	24	00100100	$	&#36;	 	Dollar
+37	045	25	00100101	%	&#37;	 	Procenttecken
+38	046	26	00100110	&	&#38;	&amp;	Ampersand
+39	047	27	00100111	'	&#39;	 	Single quote
+40	050	28	00101000	(	&#40;	 	Open parenthesis (or open bracket)
+41	051	29	00101001	)	&#41;	 	Close parenthesis (or close bracket)
+42	052	2A	00101010	*	&#42;	 	Asterisk
+43	053	2B	00101011	+	&#43;	 	Plus
+44	054	2C	00101100	,	&#44;	 	Comma
+45	055	2D	00101101	-	&#45;	 	Hyphen
+46	056	2E	00101110	.	&#46;	 	Period, dot or full stop
+47	057	2F	00101111	/	&#47;	 	Slash or divide
+48	060	30	00110000	0	&#48;	 	Zero
+49	061	31	00110001	1	&#49;	 	One
+50	062	32	00110010	2	&#50;	 	Two
+51	063	33	00110011	3	&#51;	 	Three
+52	064	34	00110100	4	&#52;	 	Four
+53	065	35	00110101	5	&#53;	 	Five
+54	066	36	00110110	6	&#54;	 	Six
+55	067	37	00110111	7	&#55;	 	Seven
+56	070	38	00111000	8	&#56;	 	Eight
+57	071	39	00111001	9	&#57;	 	Nine
+58	072	3A	00111010	:	&#58;	 	Colon
+59	073	3B	00111011	;	&#59;	 	Semicolon
+60	074	3C	00111100	<	&#60;	&lt;	Less than
+61	075	3D	00111101	=	&#61;	 	Equals
+62	076	3E	00111110	>	&#62;	&gt;	Greater than
+63	077	3F	00111111	?	&#63;	 	Question mark
+64	100	40	01000000	@	&#64;	 	At symbol
+65	101	41	01000001	A	&#65;	 	Uppercase A
+66	102	42	01000010	B	&#66;	 	Uppercase B
+67	103	43	01000011	C	&#67;	 	Uppercase C
+68	104	44	01000100	D	&#68;	 	Uppercase D
+69	105	45	01000101	E	&#69;	 	Uppercase E
+70	106	46	01000110	F	&#70;	 	Uppercase F
+71	107	47	01000111	G	&#71;	 	Uppercase G
+72	110	48	01001000	H	&#72;	 	Uppercase H
+73	111	49	01001001	I	&#73;	 	Uppercase I
+74	112	4A	01001010	J	&#74;	 	Uppercase J
+75	113	4B	01001011	K	&#75;	 	Uppercase K
+76	114	4C	01001100	L	&#76;	 	Uppercase L
+77	115	4D	01001101	M	&#77;	 	Uppercase M
+78	116	4E	01001110	N	&#78;	 	Uppercase N
+79	117	4F	01001111	O	&#79;	 	Uppercase O
+80	120	50	01010000	P	&#80;	 	Uppercase P
+81	121	51	01010001	Q	&#81;	 	Uppercase Q
+82	122	52	01010010	R	&#82;	 	Uppercase R
+83	123	53	01010011	S	&#83;	 	Uppercase S
+84	124	54	01010100	T	&#84;	 	Uppercase T
+85	125	55	01010101	U	&#85;	 	Uppercase U
+86	126	56	01010110	V	&#86;	 	Uppercase V
+87	127	57	01010111	W	&#87;	 	Uppercase W
+88	130	58	01011000	X	&#88;	 	Uppercase X
+89	131	59	01011001	Y	&#89;	 	Uppercase Y
+90	132	5A	01011010	Z	&#90;	 	Uppercase Z
+91	133	5B	01011011	[	&#91;	 	Opening bracket
+92	134	5C	01011100	\	&#92;	 	Backslash
+93	135	5D	01011101	]	&#93;	 	Closing bracket
+94	136	5E	01011110	^	&#94;	 	Caret - circumflex
+95	137	5F	01011111	_	&#95;	 	Underscore
+96	140	60	01100000	`	&#96;	 	Grave accent
+97	141	61	01100001	a	&#97;	 	Lowercase a
+98	142	62	01100010	b	&#98;	 	Lowercase b
+99	143	63	01100011	c	&#99;	 	Lowercase c
+100	144	64	01100100	d	&#100;	 	Lowercase d
+101	145	65	01100101	e	&#101;	 	Lowercase e
+102	146	66	01100110	f	&#102;	 	Lowercase f
+103	147	67	01100111	g	&#103;	 	Lowercase g
+104	150	68	01101000	h	&#104;	 	Lowercase h
+105	151	69	01101001	i	&#105;	 	Lowercase i
+106	152	6A	01101010	j	&#106;	 	Lowercase j
+107	153	6B	01101011	k	&#107;	 	Lowercase k
+108	154	6C	01101100	l	&#108;	 	Lowercase l
+109	155	6D	01101101	m	&#109;	 	Lowercase m
+110	156	6E	01101110	n	&#110;	 	Lowercase n
+111	157	6F	01101111	o	&#111;	 	Lowercase o
+112	160	70	01110000	p	&#112;	 	Lowercase p
+113	161	71	01110001	q	&#113;	 	Lowercase q
+114	162	72	01110010	r	&#114;	 	Lowercase r
+115	163	73	01110011	s	&#115;	 	Lowercase s
+116	164	74	01110100	t	&#116;	 	Lowercase t
+117	165	75	01110101	u	&#117;	 	Lowercase u
+118	166	76	01110110	v	&#118;	 	Lowercase v
+119	167	77	01110111	w	&#119;	 	Lowercase w
+120	170	78	01111000	x	&#120;	 	Lowercase x
+121	171	79	01111001	y	&#121;	 	Lowercase y
+122	172	7A	01111010	z	&#122;	 	Lowercase z
+123	173	7B	01111011	{	&#123;	 	Opening brace
+124	174	7C	01111100	|	&#124;	 	Vertical bar
+125	175	7D	01111101	}	&#125;	 	Closing brace
+126	176	7E	01111110	~	&#126;	 	Equivalency sign - tilde
+127	177	7F	01111111		&#127;	 	Delete
+
+
+// fragment
+// ID_LETTER
+//     :   [a-zA-Z$_] // these are the "java letters" below 0xFF
+//     |   // covers all characters above 0xFF which are not a surrogate
+//         ~[\u0000-\u00FF\uD800-\uDBFF]
+//         {!Character.isDigit(_input.LA(-1))}?
+//         // {Character.isJavaIdentifierStart(_input.LA(-1))}?
+//     |   // covers UTF-16 surrogate pairs encodings for U+10000 to U+10FFFF
+//         [\uD800-\uDBFF] [\uDC00-\uDFFF]
+//         {Character.isJavaIdentifierStart(Character.toCodePoint((char)_input.LA(-2), (char)_input.LA(-1)))}?
+//     ;
+
+// fragment
+// ID_LETTER_DIGIT
+//     :   [a-zA-Z0-9\$\_] // these are the "java letters or digits" below 0xFF
+//     |   // covers all characters above 0xFF which are not a surrogate
+//         ~[\u0000-\u00FF\uD800-\uDBFF]
+//         {Character.isJavaIdentifierPart(_input.LA(-1))}?
+//     |   // covers UTF-16 surrogate pairs encodings for U+10000 to U+10FFFF
+//         [\uD800-\uDBFF] [\uDC00-\uDFFF]
+//         {Character.isJavaIdentifierPart(Character.toCodePoint((char)_input.LA(-2), (char)_input.LA(-1)))}?
+//     ;
+
+// NAME  : (('/' | ~[0-9])~[/]*) ;
+
+// a Clojure keyword = ns/name, algebraically (namespace :a/b) = :a, (name :a/b) = b
+
+// once the regex is matched, the code in matchSymbol enforces further constraints
+//
+// private static Object matchSymbol(String s){
+//     Matcher m = symbolPat.matcher(s);
+//     if(m.matches())
+// 	{
+// 	    int gc = m.groupCount();
+// 	    String ns = m.group(1);
+// 	    String name = m.group(2);
+// 	    if(ns != null && ns.endsWith(":/")
+// 	       || name.endsWith(":")
+// 	       || s.indexOf("::", 1) != -1)
+// 		return null;
+/// NS constraint: ns may not:
+///    a) end with ':/'
+///    b) end with ':'
+///    c) contain '::' EXCEPT as first two chars
+
+// 	    if(s.startsWith("::"))
+// 		{
+// 		    Symbol ks = Symbol.intern(s.substring(2));
+// 		    Namespace kns;
+// 		    if(ks.ns != null)
+// 			kns = Compiler.namespaceFor(ks);
+// 		    else
+// 			kns = Compiler.currentNS();
+// 		    //auto-resolving keyword
+// 		    if (kns != null)
+// 			return Keyword.intern(kns.name.name,ks.name);
+// 		    else
+// 			return null;
+// 		}
+// 	    boolean isKeyword = s.charAt(0) == ':';
+// 	    Symbol sym = Symbol.intern(s.substring(isKeyword ? 1 : 0));
+// 	    if(isKeyword)
+// 		return Keyword.intern(sym);
+// 	    return sym;
+// 	}
+//     return null;
+// }
+
+// SYM : :?([\\D&&[^/]].*/)?(/|[\\D&&[^/]][^/]*) ;
+
+// // SYMBOL: '.' | '/' | NAME ('/' NAME)? ;
+
+// SYMBOL: '.' | '/' | NAME ('.' SYMBOL_REST*)? ('/' SYMBOL_REST*)? ;
+
+// // fragment
+// NAME: SYMBOL_HEAD SYMBOL_REST* (':' SYMBOL_REST+)* ;
+
+// // fragment
+// SYMBOL_HEAD
+//     :   'a'..'z' | 'A'..'Z' | '*' | '+' | '!' | '-' | '_' | '?' | '>' | '<' | '=' | '$'
+//     ;
+
+// // fragment
+// SYMBOL_REST
+//     : SYMBOL_HEAD
+//     | '&' // apparently this is legal in an ID: "(defn- assoc-&-binding ..." TJP
+//     | '0'..'9'
+//     | '.'
+//     ;
+
+

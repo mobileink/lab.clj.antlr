@@ -4,9 +4,10 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :source-paths ["src/clojure"]
+  :resource-paths ["target/reload"]
   :java-source-paths ["src/java"]
   :javac-options ["-target" "1.7" "-source" "1.6" "-Xlint:-options"]
-  ;; :target-path "target/%s"
+  ;; :target-path "target"
   ;;:test-paths ["test/grammar"]
   ;; :test-selectors {:default (fn [m] (not (or (:integration m) (:regression m))))
   ;;                  :integration :integration
@@ -17,6 +18,9 @@
                  [org.antlr/antlr4-runtime "4.2.2"]
                  [org.antlr/ST4 "4.0.8"]
                  [criterium "0.4.3"]
+                 [byte-streams "0.1.10"]
+                 [leiningen #=(leiningen.core.main/leiningen-version)]
+                 [im.chit/vinyasa.reimport "0.2.0"]
                  ]
   :prep-tasks [] ;; do not recompile on test
   :profiles {:dev {:dependencies [[org.clojure/tools.namespace "0.2.4"]]}}

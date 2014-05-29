@@ -22,6 +22,8 @@
 ;; ANTLR Lexer Javadoc:
 ;; http://www.antlr.org/api/Java-master/org/antlr/v4/runtime/Lexer.html
 
+(def ^:dynamic *lexrules* (atom {}))
+
 (defn lex-file
   [^String grammar ;; e.g. "org.mobileink.antlr.sym"
    ^String file ;; file to parse
@@ -52,14 +54,52 @@
         strinput (ANTLRInputStream. the-string)
         lxr (eval `(new ~(Class/forName lexname) nil))
         devnull (.setInputStream lxr strinput)
-        tokens (CommonTokenStream. lxr)]
+        tokens (CommonTokenStream. lxr)
+
+        parsername (str grammar "Parser")
+
+        foo (macroexpand `(new ~(Class/forName parsername)
+                               (CommonTokenStream.
+                                (new ~(Class/forName lexname)
+                                     (ANTLRInputStream. ~the-string)))))
+
+        parser (eval foo) ;;`(new ~(Class/forName parsername) #=tokens))
+
+        tree (do ;;(println "getting tree")
+               (.id_kw parser)) ; method name = start rule in grammar
+        ]
+
     (do
       (.fill tokens)
       (let
           [seqtoks (iterator-seq (.iterator (.getTokens tokens)))]
         (do
-          (doall (map #(println (.getTokenIndex %) (.toString %))
+          (doall (map (fn [tok]
+                        (print (format "%s  %s %s\n"
+                                       (.toString tok)
+                                       (.getType tok)
+                                       (@*lexrules* (.getType tok)))))
                       seqtoks))
+          (println (.toStringTree tree))
+          ;;(println (.getText tree))
           ))))
   nil)
 
+(defn setrules [^String grammar]
+  (let [lexname (str grammar "Lexer")
+        lxr (eval `(new ~(Class/forName lexname) nil))
+        rules (.getRuleNames lxr)
+        rulemap (.getRuleIndexMap lxr)]
+    (println rulemap)
+    ;;(doall (map (fn [[k v] %] (println k)) rulemap))
+    (doall (map #(do
+                   (swap!  *lexrules* assoc (+ 1 (.getValue %)) (.getKey %))
+                   ;(println (+ 1(.getValue %)) (.getKey %))
+                   )
+                rulemap))
+    (doseq [[k v] (sort @*lexrules*)]
+      (println k ": " v))
+    nil))
+
+(defn rule [^long i]
+  (@*lexrules* i))
