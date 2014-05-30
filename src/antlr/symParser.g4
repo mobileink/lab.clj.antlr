@@ -1,6 +1,5 @@
 parser grammar symParser;
 
-tokens {LETTER}
 options { tokenVocab=symLexer; }
 
 // start : id_symbol+ EOF ;
@@ -14,8 +13,6 @@ def  : LPAREN DEF id_symbol id_symbol* RPAREN ;
 
 id_symbol : (id_ns SLASH)? id_nm ;
 
-pfx   : id_ns SLASH ;
 id_ns : ID_NS ;
 id_nm : (SLASH | ID_NS) ;
 
-word : LETTER+ ;
