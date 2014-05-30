@@ -3,7 +3,7 @@ lexer grammar symLexer;
 DEF : 'def' ;
 
 ID_NS : CHAR_START (LETTER | DIGIT | HARF)* ;
-ID_NM : CHAR_START (LETTER | DIGIT | HARF)* ;
+ID_NM : CHAR_START (LETTER | DIGIT | HARF)* {' '==(char)_input.LA(1)}? ;
 
 fragment CHAR_START :  LETTER |  HARF |  ':'  ;
 
@@ -12,7 +12,7 @@ fragment DIGIT  :  [0-9] ;
 fragment HARF   :  [!#$%&'*+-.\<=>?_|] ;
 
 
-SLASH  :  '/' ;
+DIV    :  '/' ;
 LPAREN :  '(' ;
 RPAREN :  ')' ;
 
