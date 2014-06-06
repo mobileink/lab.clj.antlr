@@ -30,18 +30,20 @@
 /**
 clojure literal syntax.  based on Java8 grammar
  */
-grammar literals;
+lexer grammar literals;
 
-lit: literal+ EOF;
+import alphabet ;
 
-literal
-    :   IntegerLiteral
-    |   FloatingPointLiteral
-    |   CharacterLiteral
-    |   StringLiteral
-    |   BooleanLiteral
-    |   NilLiteral
-    ;
+// lit: literal+ EOF;
+
+// literal
+//     :   IntegerLiteral
+//     |   FloatingPointLiteral
+//     |   CharacterLiteral
+//     |   StringLiteral
+//     |   BooleanLiteral
+//     |   NilLiteral
+//     ;
 
 // Java §3.10.1 Integer Literals
 // http://docs.oracle.com/javase/specs/jls/se7/html/jls-3.html#jls-3.10.1
@@ -85,23 +87,23 @@ DecimalNumeral
 
 fragment
 Digits
-    :   Digit (DigitOrUnderscore* Digit)?
+    :   DIGIT (DigitOrUnderscore* DIGIT)?
     ;
 
-fragment
-Digit
-    :   '0'
-    |   NonZeroDigit
-    ;
+// fragment
+// Digit
+//     :   '0'
+//     |   NonZeroDigit
+//     ;
 
-fragment
-NonZeroDigit
-    :   [1-9]
-    ;
+// fragment
+// NonZeroDigit
+//     :   [1-9]
+//     ;
 
 fragment
 DigitOrUnderscore
-    :   Digit
+    :   DIGIT
     |   '_'
     ;
 
@@ -274,24 +276,29 @@ StringCharacter
 
 fragment
 EscapeSequence
-    :   '\\space'
-    |   '\\backspace'
-    |   '\\tab'
-    |   '\return'
-    |   '\newline'
-    |   '\formfeed'
-    |   '\\'
-    |   '\"'
-    |   '\''
+    :   '\\' 'space'
+    |   '\\' 'backspace'
+    |   '\\' 'tab'
+    |   '\\' 'return'
+    |   '\\' 'newline'
+    |   '\\' 'formfeed'
+    |   '\\' '|"'
+    |   '\\' '\''
+    |   CharEscape
     |   OctalEscape
     |   UnicodeEscape
     ;
 
 fragment
+CharEscape
+    :   '\\' LETTER
+    ;
+
+fragment
 OctalEscape
-    :   '\\' OctalDigit
-    |   '\\' OctalDigit OctalDigit
-    |   '\\' ZeroToThree OctalDigit OctalDigit
+    :   '\\' 'o' OctalDigit
+    |   '\\' 'o' OctalDigit OctalDigit
+    |   '\\' 'o' ZeroToThree OctalDigit OctalDigit
     ;
 
 fragment
@@ -308,13 +315,13 @@ NilLiteral
     :   'nil'
     ;
 
-//
-// Whitespace and comments
-//
+// //
+// // Whitespace and comments
+// //
 
-WS  :  [ \t\r\n\u000C]+ -> skip
-    ;
+// WS  :  [ \t\r\n\u000C]+ -> skip
+//     ;
 
-LINE_COMMENT
-    :   ';' ~[\r\n]* -> skip
-    ;
+// LINE_COMMENT
+//     :   ';' ~[\r\n]* -> skip
+//     ;

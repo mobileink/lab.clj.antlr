@@ -1,0 +1,247 @@
+// Clojure symbol grammar
+
+grammar sym ;
+
+// @lexer::members {
+// public static final int WHITESPACE = 3;
+// public static final int COMMENTS = 5;
+// }
+
+start: ID_NS;
+
+// LispReader symbolPat regex: [:]?([\\D&&[^/]].*/)?(/|[\\D&&[^/]][^/]*)
+
+// ID_SYM
+//     :  ID_KW
+//     |  ID_SYMBOL
+//     ;
+
+// ID_KW
+//     : ':' ID_SYMBOL
+//     ;
+
+// // TODO:  '::' only allowed at start
+// ID_SYMBOL
+//     : ID_NS? (OP_DIV | ID_NAME)
+//     ;
+//    : (ID_NS ':/')? (OP_DIV | ID_NAME) // ILLEGAL!!!
+//    : (ID_NS '/')? (OP_DIV | ID_NAME)
+
+//TODO: ns part may not end in ':/'
+//  since ns part *must* be followed by '/'
+//  this means final char cannot be ':'
+
+ID_NS  // the informal rule says '/' may not occur in ns, but the regex allows it
+    :  CHAR_START CHAR_NS* '/'
+    ;
+
+//TODO: name part may not end in ':'
+// ID_NAME
+//     :  CHAR_START CHAR_NAME* CHAR_LAST?
+//     ;
+
+// ID_QUALIFIED_NAME
+//     :  ID_NS '/' ID_NAME
+//     ;
+
+fragment
+CHAR_START
+    :  CHAR_LETTER
+    |  CHAR_SYM
+    | ':'
+    |   // covers all characters above 0xFF which are not a surrogate
+        ~[\u0000-\u00FF\uD800-\uDBFF]
+        {!Character.isDigit(_input.LA(-1))}?
+    |   // covers UTF-16 surrogate pairs encodings for U+10000 to U+10FFFF
+        [\uD800-\uDBFF] [\uDC00-\uDFFF]
+        {!Character.isDigit(Character.toCodePoint((char)_input.LA(-2), (char)_input.LA(-1)))}?
+        // {Character.isJavaIdentifierStart(Character.toCodePoint((char)_input.LA(-2), (char)_input.LA(-1)))}?
+    ;
+
+fragment
+CHAR_NS
+    :  CHAR_LETTER
+    |  CHAR_SYM
+    |  ':'
+    |  '/'
+    |  // covers all characters above 0xFF which are not a surrogate
+        ~[\u0000-\u00FF\uD800-\uDBFF]
+        {Character.isJavaIdentifierPart(_input.LA(-1))}?
+    |  // covers UTF-16 surrogate pairs encodings for U+10000 to U+10FFFF
+        [\uD800-\uDBFF] [\uDC00-\uDFFF]
+        {Character.isJavaIdentifierPart(Character.toCodePoint((char)_input.LA(-2), (char)_input.LA(-1)))}?
+    ;
+
+fragment
+CHAR_NAME
+    :  CHAR_LETTER
+    |  CHAR_SYM
+    |  ':'
+    |  // covers all characters above 0xFF which are not a surrogate
+        ~[\u0000-\u00FF\uD800-\uDBFF]
+        {Character.isJavaIdentifierPart(_input.LA(-1))}?
+    |  // covers UTF-16 surrogate pairs encodings for U+10000 to U+10FFFF
+        [\uD800-\uDBFF] [\uDC00-\uDFFF]
+        {Character.isJavaIdentifierPart(Character.toCodePoint((char)_input.LA(-2), (char)_input.LA(-1)))}?
+    ;
+
+// ASCII classes
+fragment
+CHAR_LETTER
+    :  [a-zA-Z]
+    ;
+
+// PRINTABLE ASCII =
+//   ! " # $ % & ' ( ) * + , - . /
+//   DIGITS
+//   : ; < = > ? @
+//   UC_ALPHA
+//   [ \ ] ^ _ `
+//   LC_ALPHA
+//   { | } ~
+
+// CHAR_SYM = printable ascii except macro chars, ','
+// all:   ! " # $ % & ' ( ) * + , - . / : ; < = > ? @ [ \ ] ^ _ ` { | } ~
+// legal: !   # $ % & '     * +   - .   :   < = > ?     \     _ `   |
+
+fragment
+CHAR_SYM
+    :  [!#$%&\'*+-\.\\<=>?_|]
+    ;
+
+// fragment
+// CHAR_DELIM : LPAREN | RPAREN | LBRACE | RBRACE | LBRACK | RBRACK ;
+
+// fragment
+// CHAR_MACRO // in ascii order, delims at end
+//     : MC_DBLQUOTE
+//     | MC_DISPATCH
+//     | MC_ARG
+//     | MC_QUOTE
+//     | MC_KW_START
+//     | MC_COMMENT
+//     | MC_DEREF
+//     | MC_CHARLIT
+//     | MC_META
+//     | MC_BACKQUOTE
+//     | MC_UNQUOTE
+//     | CHAR_DELIM
+//     ;
+
+// fragment
+// CHAR_MACRO_NON_TERMINATING
+//     :  MC_ARG
+//     |  MC_QUOTE
+//     |  MC_DISPATCH
+//     ;
+
+MC_DBLQUOTE  : '"'  ;
+MC_QUOTE     : '\'' ;
+MC_BACKQUOTE : '`'  ;
+MC_UNQUOTE   : '~'  ;
+MC_COMMENT   : ';'  ;
+MC_CHARLIT   : '\\' ;
+MC_DEREF     : '@'  ;
+MC_META      : '^'  ;
+MC_DISPATCH  : '#'  ;
+MC_ARG       : '%'  ;
+
+/*
+ ':' operationally defined as kw start char in LispReader.matchSymbol
+ not defined explicitly as a macro start char in LispReader
+*/
+
+fragment
+MC_KW_START : ':'  ;
+
+// dispatch macro chars  -  micro-syntax for regex patters, var quote, etc.
+// fragment
+// DISPATCH_MACRO_CHAR
+//     : DMC_META | DMC_VAR | DMC_REGEX | //DMC_FN
+//     | DMC_SET | DMC_EVAL | DMC_COMMENT ;
+
+// DMC_META    : '^'  ;
+// DMC_VAR     : '\'' ;
+// DMC_REGEX   : '"'  ;
+// //DMC_FN      : '('  ;
+// DMC_SET     : '{'  ;
+// DMC_EVAL    : '='  ;
+// DMC_COMMENT : '!'  ;
+// '<' = UnreadableReader ??
+// '_' = DiscardReader  ??
+
+LPAREN          : '(';
+RPAREN          : ')';
+LBRACE          : '{';
+RBRACE          : '}';
+LBRACK          : '[';
+RBRACK          : ']';
+
+/*
+NB: example:  user=> (type /) => clojure.core$_SLASH_
+type/class of chars set in clojure.lang.Compiler:
+static final public IPersistentMap CHAR_MAP =
+		PersistentHashMap.create('-', "_",
+//		                         '.', "_DOT_",
+':', "_COLON_",
+'+', "_PLUS_",
+'>', "_GT_",
+'<', "_LT_",
+'=', "_EQ_",
+'~', "_TILDE_",
+'!', "_BANG_",
+'@', "_CIRCA_",
+'#', "_SHARP_",
+'\'', "_SINGLEQUOTE_",
+'"', "_DOUBLEQUOTE_",
+'%', "_PERCENT_",
+'^', "_CARET_",
+'&', "_AMPERSAND_",
+'*', "_STAR_",
+'|', "_BAR_",
+'{', "_LBRACE_",
+'}', "_RBRACE_",
+'[', "_LBRACK_",
+']', "_RBRACK_",
+'/', "_SLASH_",
+'\\', "_BSLASH_",
+'?', "_QMARK_");
+*/
+
+
+// COMMA           : ',';
+// DOT             : '.';
+
+THREAD_FIRST    : '->'  ;
+THREAD_LAST     : '->>' ;
+
+// NOTEQ           : 'not=';
+// EQEQ            : '==';
+// EQ              : '=';
+// GE              : '>=';
+// GT              : '>';
+// LE              : '<=';
+// LT              : '<';
+// BANG            : '!';
+// QUESTION        : '?';
+// ANDAND          : '&&';
+// AND             : '&';
+// OROR            : '||';
+// OR              : '|';
+//INC             : '++';
+//DEC             : '--';
+OP_ADD             : '+';
+OP_SUB             : '-';
+OP_MUL             : '*';
+OP_DIV             : '/';
+
+
+
+WS : [ \t\r\n\u000C\u2028]+ -> skip ;
+
+COMMENT : ';' ~[\r\n]*  -> skip ;
+
+// WS : [ \t\r\n\u000C\u2028]+ -> channel(WHITESPACE) ;
+
+// COMMENT : ';' ~[\r\n]*  -> channel(COMMENTS) ;
+
