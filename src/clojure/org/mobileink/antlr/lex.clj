@@ -26,7 +26,7 @@
 (def ^:dynamic *rulemap* (atom nil))
 
 (defn- settoks [^String grammar]
-  (let [lexname (str grammar "Lexer")
+  (let [lexname grammar ;;  (str grammar "Lexer")
         lxr (eval `(new ~(Class/forName lexname) nil))
         toks (.getTokenNames lxr)
         tokmap (.getTokenTypeMap lxr)]
@@ -45,8 +45,11 @@
     (doseq [[k v] (sort @*tokmap*)]
       (println k ": " v))))
 
+(defn tok [^long i]
+  (@*tokmap* i))
+
 (defn- setrules [^String grammar]
-  (let [lexname (str grammar "Lexer")
+  (let [lexname grammar ;; (str grammar "Lexer")
         lxr (eval `(new ~(Class/forName lexname) nil))
         rules (.getRuleNames lxr)
         rulemap (.getRuleIndexMap lxr)]
@@ -72,7 +75,7 @@
    ^String file ;; file to parse
    ]
   (let [
-        lexname (str grammar "Lexer")
+        lexname grammar ;; (str grammar "Lexer")
         infile (ANTLRFileStream. file)
         lxr (eval `(new ~(Class/forName lexname) nil))
         devnull (.setInputStream lxr infile)
@@ -93,7 +96,7 @@
   [^String grammar ;; e.g. "org.mobileink.antlr.sym"
    ^String the-string ;; file to scan
    ]
-  (let [lexname (str grammar "Lexer")
+  (let [lexname grammar ; (str grammar "Lexer")
         strinput (ANTLRInputStream. the-string)
         lxr (eval `(new ~(Class/forName lexname) nil))
         devnull (.setInputStream lxr strinput)
