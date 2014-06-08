@@ -1,5 +1,7 @@
 lexer grammar alphabet;
 
+tokens {FOO, Bar, ID_KW}
+
 fragment LETTER
     :  [a-zA-Z]
     |   // covers all characters above 0xFF which are not a surrogate
