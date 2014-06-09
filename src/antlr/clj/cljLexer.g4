@@ -4,10 +4,11 @@ tokens {KW_NM}
 
 @lexer::members {
             public static final int WHITESPACE = 3;
-            public static final int COMMENTS = 5;
-            // public static final int KW_MODE = DEFAULT_MODE + 1;
+            public static final int COMMENT = 5;
             public static final String stops = " \t\n";
 }
+
+import alphabet, literals ;
 
 // import
 //         symbols
@@ -25,23 +26,67 @@ tokens {KW_NM}
 
 // See below for explanation of SYM_START and KW_START
 
-// embedded '::' and final ':' are handled by the parser
+// ':' handling:
+// PASS:  'a', 'a:b', 'a:b:c:z', ':a', ':a:b', ':a:b:c:z' etc.
+// PASS:  'a:b/c', 'a/b:c', 'a:b/c:d' etc.
+// FAIL:  ':a:', ':a:b:', ':a/b:' etc. (no trailing ':')
+
+// PASS:  '::a', '::a:b', etc.
+// FAIL:  '::a/b', '::a/b:c, '::a:b/c', etc.
+// FAIL:  ':::a', ':a::b' ':a/b::c' etc. (no embedded '::')
+
+// STRATEGY: we detect these violations in the lexer using actions.
+// We could use predicates, but then the strings would not
+// be tokenized the way we want.
+// E.g. we want 'a::b' to be tokenized as is, but flagged as illegal,
+// With predicates it would be tokenized as 'a:' (illegal) plus ':b' (legal)
+// so e.g. a::b: will trigger two exception messages
+
+// In other words, we want to recognize a class of known violations
+// as "bad tokens" instead of trying to find some partial recog.
+// this makes it easier for the user to see what's wrong.
+
+// NOTE: we could do the same for other "stop" chars,
+// like '@', '%', etc - syms that are not in the
+// HARF class (see below).
 
 KW_SENTINEL
     : ':'
-        {System.out.println("KW_SENTINEL");}
+        // {System.out.println("KW_SENTINEL");}
         -> pushMode(KW)
     ;
 
 SYM_NS
     : SYM_START (LETTER | DIGIT | HARF)*
         {_input.LA(1) == '/'}?
-        {System.out.println("SYM_NS: " + getText());}
+        // {
+        //     // System.out.println("SYM_NS: " + getText());
+        //     if (getText().endsWith(":")) {
+        //         System.out.println("SYM_NS LEX EXCEPTION: terminal ':' in "
+        //                            + getText());
+        //     }
+        //     if (getText().indexOf("::", 1) >= 0) {
+        //         System.out.println("SYM_NS LEX EXCEPTION: embedded '::' in "
+        //                            + getText());
+        //     }
+        // }
         -> pushMode(SYM)
     ;
 SYM_NM : SYM_START (LETTER | DIGIT | HARF)*
-        {System.out.println("SYM_NM: " + getText());}
-        // -> popMode
+        // {
+            // System.out.println("SYM_NM: " + getText());
+            // TODO: throw ANTLR errors
+            // if (getText().endsWith(":")) {
+            //     System.out.println("SYM_NM LEX EXCEPTION: terminal ':' in "
+            //                        + getText());
+            // }
+            // if (getText().indexOf("::", 1) >= 0) {
+            //     System.out.println("SYM_NM LEX EXCEPTION: embedded '::' in "
+            //                        + getText());
+            // }
+        // }
+        // TODO:  allow single '/' as nm
+    | '/'
     ;
 
 // ================================================================
@@ -49,30 +94,88 @@ mode KW;
 KW_NS
     : SYM_START (LETTER | DIGIT | HARF)*
         {_input.LA(1) == '/'}?
-        {System.out.println("KW_NS: " + getText());}
+        // {
+        //     // System.out.println("KW_NS: " + getText());
+        //     if (getText().endsWith(":")) {
+        //         System.out.println("KW_NS LEX EXCEPTION: terminal ':' in "
+        //                            + getText());
+        //     }
+        //     if (getText().indexOf("::", 1) >= 0) {
+        //         System.out.println("KW_NS LEX EXCEPTION: embedded '::'"
+        //                            + getText());
+        //     }
+        // }
         // TODO: check for embedded '::'
         // -> pushMode(KW)
     ;
-KW_SEP : '/' ;
+KW_SEP : '/' -> type(SLASH);
+// TODO: handle single '/' as name part, as below for syms
 KW_NM : KW_START (LETTER | DIGIT | HARF)*
-        {System.out.println("KW_NM: " + getText());}
+        // {
+        //     // System.out.println("KW_NM: " + getText());
+        //     if (getText().endsWith(":")) {
+        //         System.out.println("KW_NM LEX EXCEPTION: terminal ':' in "
+        //                            + getText());
+        //     }
+        //     if (getText().indexOf("::", 1) >= 0) {
+        //         System.out.println("KW_NM LEX EXCEPTION: embedded '::' in "
+        //                            + getText());
+        //         // TODO: throw error
+        //     }
+        // }
         -> popMode
         // TODO: check for embedded '::'
         // TODO: detect ::a make a the nm, not :a
     ;
 
-
 // ID_NS :     CHAR_START (LETTER | DIGIT | HARF)* '/' ;
 
 // ================================================================
 mode SYM;
-SYM_SEP : '/' ;
-SYM_NMX : KW_START (LETTER | DIGIT | HARF)*
-        {System.out.println("SYM_NM: " + getText());
-        setType(SYM_NM);}
-        -> popMode
+SYM_SEP
+    : '/'
+        {_input.LA(1) == '/'}? // e.g. clojure.core//
+        {
+            // System.out.println("SYM_SEP: " + getText());
+            setType(SLASH);
+        }
+        -> mode(DIVOP)
+    ;
+// if the SYM_SEP predicate is false, the whole match fails
+// so we need the same prod again, without the predicate
+// to match in that case, e.g.  a/b
+SYM_SEP2
+    : '/'
+        {
+            // System.out.println("SYM_SEP: " + getText());
+            setType(SLASH);
+        }
     ;
 
+SYM_NMX
+    : (
+            KW_START (LETTER | DIGIT | HARF)*
+            {
+                // System.out.println("SYM_NMX: " + getText());
+                setType(SYM_NM);
+            }
+            // TODO:  allow single '/' as nm
+        // | '/'
+        //     {
+        //         System.out.println("SYM_NMX: " + getText());
+        //         setType(SYM_NM);
+        //     }
+        ) -> popMode
+    ;
+
+mode DIVOP;
+DIV : '/'
+        {
+            // System.out.println("DIVOP");
+                setType(SYM_NM);
+        }
+        -> popMode
+    ;
 
 mode DEFAULT_MODE;
 // ID_NM :     CHAR_START (LETTER | DIGIT | HARF)*
@@ -119,10 +222,7 @@ SYM_START
     |   // covers UTF-16 surrogate pairs encodings for U+10000 to U+10FFFF
         [\uD800-\uDBFF] [\uDC00-\uDFFF]
         {!Character.isDigit(Character.toCodePoint((char)_input.LA(-2), (char)_input.LA(-1)))}?
-        // {Character.isJavaIdentifierStart(Character.toCodePoint((char)_input.LA(-2), (char)_input.LA(-1)))}?
-        // {System.out.println("SYM_START: " + getText());}
     ;
-
 
 // HURUF (sg. HARF) = printable ascii except macro chars, ',', numbers and letters
 // in ascii order:
@@ -138,70 +238,34 @@ HARF_START
     : '!'  | '#' | '$' | '%' | '&'
     | '\'' | '*' | '+' | '-'
     | '.'  | '<' | '=' | '>'
-    | '?' | '\\' | '_' | '|' | ']'
+    | '?' | '\\' | '_' | '|'
     ;
 
 //fragment
-MACRO : MACRO_TERMINATING | MACRO_NON_TERMINATING | DELIM ;
+// MACRO : MACRO_TERMINATING | MACRO_NON_TERMINATING | DELIM ;
 // ascii order
 
-fragment
-MACRO_TERMINATING : '"' | '`' | '~' | ';' | '\\' | '@' | '^' ;
-fragment
-MACRO_NON_TERMINATING : '#' | '%' | '\'' ;
+// fragment
+// MACRO_TERMINATING : '"' | '`' | '~' | ';' | '\\' | '@' | '^' ;
 
-SLASH  :  '/' ;
-LPAREN :  '(' ;
-RPAREN :  ')' ;
-LBRACK :  '[' ;
-RBRACK :  ']' ;
+// WARNING: repl behavior does not match LispReader.  The
+// latter says '%' is non-terminating; the former chokes on
+// e.g.  'a%b
+// fragment
+// MACRO_NON_TERMINATING : '#' | '%' | '\'' ;
 
-DELIM : '(' | ')' | '[' | ']' | '{' | '}' ;
+WS  :  [ \t\r\n\u000C]+ -> channel(WHITESPACE)
+    ;
 
-//mode STRICT;
+LINE_COMMENT
+    :   ';' ~[\r\n]* -> channel(COMMENT)
+    ;
+
+//mode STRICT;  // no embedded '/' in syms, etc.
+
+//mode LOOSE; // match Clojure's de facto grammar
 
 // in clojure.lang.LispReader
 // static Pattern symbolPat =
 //  Pattern.compile("[:]?([\\D&&[^/]].*/)?(/|[\\D&&[^/]][^/]*)");
 
-//fragment
-// ID_NS : CHAR_START (LETTER | DIGIT | HARF)* ;
-
-// here the semantic predicate prevents matching e.g. abc/def/ghi
-//fragment
-//ID_NM : CHAR_START (LETTER | DIGIT | HARF)* ; // {' '==(char)_input.LA(1)}? ;
-
-
-
-fragment
-LETTER
-    :  [a-zA-Z]
-    |   // covers all characters above 0xFF which are not a surrogate
-        ~[\u0000-\u00FF\uD800-\uDBFF]
-        {Character.isJavaIdentifierStart(_input.LA(-1))}?
-    |   // covers UTF-16 surrogate pairs encodings for U+10000 to U+10FFFF
-        [\uD800-\uDBFF] [\uDC00-\uDFFF]
-        {Character.isJavaIdentifierStart(Character.toCodePoint((char)_input.LA(-2), (char)_input.LA(-1)))}?
-        // {System.out.println("LETTER: " + getText());}
-    ;
-
-
-fragment
-DIGIT
-    :   '0'
-    |   NonZeroDigit
-    ;
-
-fragment
-NonZeroDigit
-    :   [1-9]
-    ;
-
-
-
-WS  :  [ \t\r\n\u000C]+ // -> channel(WHITESPACE)
-    ;
-
-LINE_COMMENT
-    :   ';' ~[\r\n]* // -> channel(COMMENTS)
-    ;

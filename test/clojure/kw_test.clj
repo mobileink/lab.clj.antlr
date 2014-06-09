@@ -1,10 +1,13 @@
-(ns sym
+(ns kw_test
   (:import [org.antlr.v4.runtime DefaultErrorStrategy]
-           [symLexer])
+           [symLexer]
+           )
   (:require [clojure.test :refer :all]
             [org.mobileink.antlr :refer :all]
-            [org.mobileink.antlr.lex :refer :all :as lex]
-            [org.mobileink.antlr.parse :refer :all]))
+            [org.mobileink.antlr.clj :refer :all :as clj]))
+
+;; TODO: drive verbose switch from param
+(def verbose nil)
 
 (def ers ;; error recovery strategy
   (proxy [DefaultErrorStrategy] []
@@ -22,6 +25,7 @@
 ;;     )))
 
 (defn setup []
+  (clj/make-parser "cljLexer" "cljParser")
   )
 
 (defn teardown []
@@ -29,19 +33,21 @@
 
 (defn test-setup
   [f]
-  (println "test setup")
   (setup)
   (f)
-  (println "test teardown")
   (teardown))
 
 (use-fixtures :once test-setup)
 
-;; (deftest sym01
-;;   (testing "minimal symbol"
-;;     (lex/lex-string "abc def" "sym")))
+(deftest kw-min1
+  (testing "minimal keyword"
+    (nil? (clj/lex-string ":9"))))
 
-(deftest symfile-01
-  (testing "minimal symbol file"
-    (lex/lex-file "sym" "test/data/sym/sym902.clj")))
+(deftest kw-min2
+  (testing "minimal keyword with ns"
+    (nil? (clj/lex-string ":a/b"))))
+
+(deftest kw-min3
+  (testing "parse minimal keyword with ns"
+    (nil? (clj/parse-string "[:a/b 0]"))))
 

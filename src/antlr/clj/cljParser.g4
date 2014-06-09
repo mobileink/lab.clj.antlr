@@ -4,60 +4,73 @@ options { tokenVocab = cljLexer; }
 
 // use an empty start production to exercise the lexer only,
 // without triggering parse rule violations
-start
-    : ( kw | sym ) (ws (kw | sym))* ws* EOF
+start : sexp+ EOF ;
+
+    // : ( kw | sym ) (kw | sym)* EOF
+    // ;
+
+sexp : lexp | vexp | mexp ;
+
+lexp
+    : LPAREN (kw | sym | sexp) (sexp | kw | sym | Literal)* RPAREN
     ;
 
-// to test specific lex rules, define parser rules for them and then
-// put them in the start production as desired
-// start: (def | special | macro )+ EOF ;
+vexp
+    : LBRACK (sexp | kw | sym | Literal)+ RBRACK
+    ;
 
+mexp
+    : LBRACE pair+ RBRACE
+    ;
 
-// every parser rule generates enter and exit methods in the Listener
-// class, and visit methods in the Visitor class.
-
-// so if you want to pick out some class of symbols or whatever for
-// special treatment, you must name it and define a parser rule by
-// that name.  that will cause enter/exit/visit methods to be
-// generated, which your code can override.
-
-// these parser rules are for test purposes only
-// def : DEF | DEFN_ | DEFMACRO | DEFINLINE | DEFN
-//     | DEFMULTI | DEFMETHOD | DEFONCE | DEFSTRUCT;
-
-// special: DO | DEF | LET | LOOP ;
-// macro : DEFMACRO | DEFINLINE | MACROEXPAND | AND | OR | WHEN ;
-
-ws: WS ;
+pair: (sexp | kw | sym | Literal) (sexp | kw | sym | Literal) ;
 
 sym
     // : id_ns? id_nm
-    : (sym_ns SYM_SEP)? sym_nm
+    : (sym_ns SLASH)? sym_nm
         {
             if ($sym.text.indexOf("::", 1) >= 0)
-                {System.out.println("EXCEPTION: embedded '::' in "
-                                    + $sym.text);}
-            if ($sym_ns.text!=null) {if ($sym_ns.text.endsWith(":"))
-                    {System.out.println("EXCEPTION: terminal ':' in "
-                                        + $sym_ns.text);}}
-            if ($sym_nm.text!=null) {if ($sym_nm.text.endsWith(":"))
-                    {System.out.println("EXCEPTION: terminal ':' in "
-                                        + $sym_nm.text);}}
+                {
+                    notifyErrorListeners("EXCEPTION: parser: embedded '::' in '"
+                                         + $sym.text
+                                         + "'");
+                }
+            if ($sym_ns.text!=null) {
+                if ($sym_ns.text.endsWith(":")) {
+                    notifyErrorListeners("EXCEPTION parser: trailing ':' in '"
+                                         + $sym_ns.text
+                                         + "'");
+                }}
+            if ($sym_nm.text!=null) {
+                if ($sym_nm.text.endsWith(":")) {
+                    notifyErrorListeners("EXCEPTION parser: trailing ':' in '"
+                                         + $sym_nm.text
+                                         + ";");
+                }}
         }
     ;
 
 kw
-    : KW_SENTINEL (kw_ns KW_SEP)? kw_nm
+    : KW_SENTINEL (kw_ns SLASH)? kw_nm
         {
             if ($kw.text.indexOf("::", 1) >= 0)
-                {System.out.println("EXCEPTION: embedded '::' in "
-                                    + $kw.text);}
-            if ($kw_ns.text!=null) {if ($kw_ns.text.endsWith(":"))
-                    {System.out.println("EXCEPTION: terminal ':' in "
-                                        + $kw_ns.text);}}
-            if ($kw_nm.text!=null) {if ($kw_nm.text.endsWith(":"))
-                    {System.out.println("EXCEPTION: terminal ':' in "
-                                        + $kw_nm.text);}}
+                {
+                    notifyErrorListeners("EXCEPTION: parser: embedded '::' in '"
+                                         + $kw.text
+                                         + "'");
+                }
+            if ($kw_ns.text!=null) {
+                if ($kw_ns.text.endsWith(":")) {
+                    notifyErrorListeners("EXCEPTION parser: trailing ':' in '"
+                                         + $kw_ns.text
+                                         + "'");
+                }}
+            if ($kw_nm.text!=null) {
+                if ($kw_nm.text.endsWith(":")) {
+                    notifyErrorListeners("EXCEPTION parser: trailing ':' in '"
+                                         + $kw_nm.text
+                                         + ";");
+                }}
         }
     ;
 

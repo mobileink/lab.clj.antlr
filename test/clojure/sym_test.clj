@@ -1,6 +1,7 @@
-(ns hello
+(ns sym
   (:import [org.antlr.v4.runtime DefaultErrorStrategy]
-           [symLexer])
+           [cljLexer]
+           [cljParser])
   (:require [clojure.test :refer :all]
             [org.mobileink.antlr :refer :all]
             [org.mobileink.antlr.lex :refer :all :as lex]
@@ -37,11 +38,11 @@
 
 (use-fixtures :once test-setup)
 
-(deftest hello-1
-  (testing "minimal symbol"
-    (lex/lex-string "hello" "abc def")))
+;; (deftest sym01
+;;   (testing "minimal symbol"
+;;     (lex/lex-string "abc def" "sym")))
 
-(deftest hello-2
-  (testing "minimal symbol"
-    (lex/lex-file "hello" "test/data/hello.txt")))
+(deftest symfile-01
+  (testing "minimal symbol file"
+    (lex/lex-file "sym" "test/data/sym/sym902.clj")))
 

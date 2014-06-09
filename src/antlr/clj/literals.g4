@@ -32,18 +32,18 @@ clojure literal syntax.  based on Java8 grammar
  */
 lexer grammar literals;
 
-import alphabet ;
+//import alphabet ;
 
 // lit: literal+ EOF;
 
-// literal
-//     :   IntegerLiteral
-//     |   FloatingPointLiteral
-//     |   CharacterLiteral
-//     |   StringLiteral
-//     |   BooleanLiteral
-//     |   NilLiteral
-//     ;
+Literal
+    :   IntegerLiteral
+    |   FloatingPointLiteral
+    |   CharacterLiteral
+    |   StringLiteral
+    |   BooleanLiteral
+    |   NilLiteral
+    ;
 
 // Java §3.10.1 Integer Literals
 // http://docs.oracle.com/javase/specs/jls/se7/html/jls-3.html#jls-3.10.1

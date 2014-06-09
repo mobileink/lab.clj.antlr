@@ -8,7 +8,7 @@
   :java-source-paths ["src/java"]
   :javac-options ["-target" "1.7" "-source" "1.6" "-Xlint:-options"]
   ;; :target-path "target"
-  ;;:test-paths ["test/grammar"]
+  :test-paths ["test/clojure"]
   ;; :test-selectors {:default (fn [m] (not (or (:integration m) (:regression m))))
   ;;                  :integration :integration
   ;;                  :regression :regression}
@@ -22,6 +22,7 @@
                  [leiningen #=(leiningen.core.main/leiningen-version)]
                  [im.chit/vinyasa.reimport "0.2.0"]
                  ]
+  ;; :test-selectors {:kw :kw}
   :prep-tasks [] ;; do not recompile on test
   :profiles {:dev {:dependencies [[org.clojure/tools.namespace "0.2.4"]]}}
   )

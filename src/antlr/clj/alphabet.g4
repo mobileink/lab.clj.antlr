@@ -24,3 +24,12 @@ NonZeroDigit
     :   [1-9]
     ;
 
+SLASH  :  '/' ;
+LPAREN :  '(' ;
+RPAREN :  ')' ;
+LBRACK :  '[' ;
+RBRACK :  ']' ;
+LBRACE :  '{' ;
+RBRACE :  '}' ;
+
+// DELIM : '(' | ')' | '[' | ']' | '{' | '}' ;

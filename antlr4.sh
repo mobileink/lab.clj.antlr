@@ -13,12 +13,12 @@ usage(){
 # call usage() function if filename not supplied
 [[ $# -eq 0 ]] && usage
 
-(cd src/antlr; \
+(cd src/antlr/clj; \
     java \
     -cp "$ANTLR/antlr4-runtime/4.2.2/antlr4-runtime-4.2.2.jar:$ANTLR/antlr4/4.2.2/antlr4-4.2.2.jar:$ANTLR/ST4/4.0.8/ST4-4.0.8.jar:$ANTLR/antlr-runtime/3.5.2/antlr-runtime-3.5.2.jar" \
     org.antlr.v4.Tool \
-    -o ../../src/java \
-    -no-listener \
-    -no-visitor \
+    -o ../../../src/java/clj \
+    -listener \
+    -visitor \
     $*.g4)
 

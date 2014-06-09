@@ -40,29 +40,122 @@ import alphabet;
 // NB:  unicode char syntax not allowed in symbols? i.e. a/u0064 is illegal as a symbol
 
 
-// identifiers limited to ascii???
+// for testing only. we want sym, kw ids to be parsed so we can get at them in
+// the tree walker
 
-ID_NS : CHAR_START (LETTER | DIGIT | HARF)* ;
+// ID_SYMBOL
+//     : ID_KW
+//     | ID_SYM
+//     ;
+
+// ID_KW : ':' (ID_NS '/')? ID_NM ;
+//ID_SYM: (ID_NS '/')? ID_NM ;
+// end testing
+
+
+// sym syntax is ill-defined between clojure code and desc
+// so we have two modes strict and loose
+// strict means: ns and nm have same grammar:
+// no '/', no trailing ':', no internal '::'
+
+// default: mode LOOSE allows '/' in ns part:
+// symbolPat = [:]?([\\D&&[^/]].*/)?(/|[\\D&&[^/]][^/]*)
+
+//fragment
+//ID_NS : CHAR_START (LETTER | DIGIT | HARF | '/')*? ;
+
 // here the semantic predicate prevents matching e.g. abc/def/ghi
-ID_NM : CHAR_START (LETTER | DIGIT | HARF)* {' '==(char)_input.LA(1)}? ;
-fragment CHAR_START :  LETTER |  HARF |  ':'  ;
+//fragment
+//ID_KW :;
+// ID_KW : ':' CHAR_START (LETTER | DIGIT | HARF)* ; //'/'
+    //     {getText().indexOf("::", 1) < 0}?
+    //     {!(getText().endsWith(":"))}?
+    // ;
+        // {1<0}?
+        // {System.out.println("namespace " + getText() + " may not contain '::'");}
+        // {getText().indexOf("::", 1) >= 0}?
+        // {getText().endsWith(":")}?
+        // {System.out.println("namespace " + getText() + " may not end with ':'");}
+        // {(getText().indexOf("::", 1) < 0)
+        //     &&
+        //     (!getText().endsWith(":"))
+        // }?
+        // {getText().indexOf("::", 1) != -1}?
+        // {System.out.println("namespace " + getText() + " may not contain '::'");}
+        // {getText().endsWith(":")}?
+        // {System.out.println("namespace " + getText() + " may not end with ':'");}
+        // no trailing ':'; no internal '::'
+        // {' '==(char)_input.LA(1)}? ;
+    // ;
+
+// ID_KW : ':' CHAR_START (LETTER | DIGIT | HARF)*
+//     ;
+
+ID : CHAR_START (LETTER | DIGIT | HARF)*
+        {if (getText().startsWith(":")) {
+                System.out.println("changing type from sym to kw" + getText());
+                setType(CHAR_START);
+            }
+        }
+        // {!(getText().endsWith(":"))}?
+        // {' '==(char)_input.LA(1)}? // WS
+    ;
+
+        //{System.out.println("namespace " + getText() + " may not contain '::'");}
+        //{System.out.println("namespace may not end with ':'");}
+        //{getText().equals("enum")}?
+
+        // {if (getText().indexOf("::", 1) >= 0) {
+        //         throw new IllegalStateException("illegal embedded '::'");
+        //     }
+        //        {getText().indexOf("::", 1) >= 0}?
+        // {System.out.println("namespace " + getText() + " may not contain '::'");}
+        // {getText().endsWith(":")}?
+        // {System.out.println("namespace " + getText() + " may not end with ':'");}
+ //     else
+        //         if (getText().endsWith(":")) {
+        //         throw new IllegalStateException("illegal trailing ':'");
+        //     }
+        // }
+        // {System.out.println("ID '" + getText() + "' may not end with ':'");}
+        // no trailing ':'; no internal '::'
+        // {' '==(char)_input.LA(1)}? ;
+    // ;
+
+// fragment CHAR_START :  LETTER |  HARF |  ':'  ;
+fragment
+CHAR_START
+    :  LETTER
+    |  HARF
+    |   // covers all characters above 0xFF which are not a surrogate
+        ~[\u0000-\u00FF\uD800-\uDBFF]
+        {!Character.isDigit(_input.LA(-1))}?
+    |   // covers UTF-16 surrogate pairs encodings for U+10000 to U+10FFFF
+        [\uD800-\uDBFF] [\uDC00-\uDFFF]
+        {!Character.isDigit(Character.toCodePoint((char)_input.LA(-2), (char)_input.LA(-1)))}?
+        // {Character.isJavaIdentifierStart(Character.toCodePoint((char)_input.LA(-2), (char)_input.LA(-1)))}?
+    ;
+
 
 // HURUF (sg. HARF) = printable ascii except macro chars, ',', numbers and letters
 // in ascii order:
 // all:   ! " # $ % & ' ( ) * + , - . / : ; < = > ? @ [ \ ] ^ _ ` { | } ~
 // legal: !   # $ % & '     * +   - .   :   < = > ?     \     _    |
 
-fragment HARF
+fragment
+HARF
     : '!'  | '#' | '$' | '%' | '&'
     | '\'' | '*' | '+' | '-'
     | '.'  | ':' | '<' | '=' | '>'
     | '?' | '\\' | '_' | '|' | ']' ;
 
-fragment
+//fragment
 MACRO : MACRO_TERMINATING | MACRO_NON_TERMINATING | DELIM ;
 // ascii order
-MACRO_TERMINATING : '"' | '`' | '~' | ';' | '\\' | '@' | '^' ;
 
+fragment
+MACRO_TERMINATING : '"' | '`' | '~' | ';' | '\\' | '@' | '^' ;
+fragment
 MACRO_NON_TERMINATING : '#' | '%' | '\'' ;
 
 SLASH  :  '/' ;
@@ -73,23 +166,16 @@ RBRACK :  ']' ;
 
 DELIM : '(' | ')' | '[' | ']' | '{' | '}' ;
 
+mode STRICT;
 
-// fragment LETTER
-//     :  [a-zA-Z]
-//     |   // covers all characters above 0xFF which are not a surrogate
-//         ~[\u0000-\u00FF\uD800-\uDBFF]
-//         {Character.isJavaIdentifierStart(_input.LA(-1))}?
-//     |   // covers UTF-16 surrogate pairs encodings for U+10000 to U+10FFFF
-//         [\uD800-\uDBFF] [\uDC00-\uDFFF]
-//         {Character.isJavaIdentifierStart(Character.toCodePoint((char)_input.LA(-2), (char)_input.LA(-1)))}?
-//     ;
+// in clojure.lang.LispReader
+// static Pattern symbolPat =
+//  Pattern.compile("[:]?([\\D&&[^/]].*/)?(/|[\\D&&[^/]][^/]*)");
 
-// NUMERAL : DIGIT+ ;
-//fragment DIGIT  :  [0-9] ;
-// DIGIT defined in literals.g4
+//fragment
+// ID_NS : CHAR_START (LETTER | DIGIT | HARF)* ;
 
-// SP : ' ';
+// here the semantic predicate prevents matching e.g. abc/def/ghi
+//fragment
+//ID_NM : CHAR_START (LETTER | DIGIT | HARF)* ; // {' '==(char)_input.LA(1)}? ;
 
-// WS : [ \t\r\n\u000C\u2028]+ -> skip ;
-
-// COMMENT : ';' ~[\r\n]*  -> skip ;
