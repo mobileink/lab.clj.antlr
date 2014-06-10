@@ -40,14 +40,54 @@
 (use-fixtures :once test-setup)
 
 (deftest kw-min1
-  (testing "minimal keyword"
-    (nil? (clj/lex-string ":9"))))
-
-(deftest kw-min2
-  (testing "minimal keyword with ns"
-    (nil? (clj/lex-string ":a/b"))))
+  (testing "minimal keyword w/o ns"
+    (is (nil? (clj/lex-string ":a")))))
 
 (deftest kw-min3
-  (testing "parse minimal keyword with ns"
-    (nil? (clj/parse-string "[:a/b 0]"))))
+  (testing "minimal keyword with ns"
+    (is (nil? (clj/lex-string ":a/b")))))
+
+(deftest kw-bad0
+  (testing "numeric start char"
+    (is (= (clj/lex-string ":9")
+           "token recognition error at: '9'"))))
+
+(deftest kw-bad1
+  (testing "empty ns"
+    (is (= (clj/lex-string ":/b")
+           "token recognition error at: '/b'"))))
+
+(deftest kw-trailing-colon-1
+  (testing "trailing ':' w/o ns"
+    (is (= (clj/lex-string ":a:")
+           "token recognition error at: 'a:'"))))
+
+(deftest kw-trailing-colon-2
+  (testing "trailing ':' in ns"
+    (is (= (clj/lex-string ":a:/b")
+           "token recognition error at: '/b'"))))
+
+(deftest kw-trailing-colon-3
+  (testing "trailing ':' in nm w/ns"
+    (is (= (clj/lex-string ":a/b:")
+           "token recognition error at: 'b:'"))))
+
+(deftest kw-trailing-colon-4
+  (testing "trailing ':' in ns and nm"
+    (is (= (clj/lex-string ":a:/b:")
+           "token recognition error at: 'b:'"))))
+
+(deftest kw-embedded-colon-1
+  (testing "embedded '::' in nm"
+    (is (= (clj/lex-string ":a::b")
+           "token recognition error at: 'a::b'"))))
+
+(deftest kw-embedded-colon-2
+  (testing "embedded '::' in ns w/nm"
+    (is (nil? (clj/lex-string ":a::b/c")))))
+
+(deftest kw-embedded-colon-3
+  (testing "embedded '::' in nm w/ns"
+    (is (= (clj/lex-string ":a/b::c")
+           "token recognition error at: 'b::c'"))))
 

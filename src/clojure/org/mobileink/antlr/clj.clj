@@ -55,6 +55,8 @@
 (defn tok [^long i]
   (@*tokmap* i))
 
+(def ^:dynamic *dirty* (atom nil))
+
 (defn make-lexer
   [^String lexis]
   (if (nil? @*lexer*)
@@ -67,23 +69,31 @@
                  )
 
           error-listener (proxy [BaseErrorListener]  []
-                           (syntaxError [^Recognizer r
+                           (syntaxError [^Lexer r
                                          ^Object badsym
                                          line
                                          col
                                          msg
                                          ^RecognitionException e]
-                             ;; (println "LEX ERROR")
-                             ;; (println "obj: " badsym)
+                             ;; only save most recent error
+                             (reset! *dirty* msg)
+                             ;; (print "LEX ERROR: ")
+                             (println "r: " r)
+                             (println "r: " (.getToken r))
+                             (println "r: " (.getText r))
+                             ;; (doseq [item (.getTokenNames r)]
+                             ;;            (println "toknm: " item))
+                             (println "badtok: " (.getOffendingToken
+                                                  e))
+                             ;;(println "obj: " badsym)
                              ;; (println "line: " line)
                              ;; (println "col:  " col)
-                             ;; (println "msg: " msg)
-                             ;; (println "e: " e)
+                             (println msg)
+                             ;; (println "e: " (.toString e))
 
 ;; TODO: make it return err code rather than throw exception
 ;; so that clojure.test works nicely
-                             (throw e)
-
+                             ;(throw e)
                              ))
           ;; parser (eval  `(->>
           ;;                 ::tokens
@@ -119,6 +129,7 @@
 (defn lex-string
   [^String the-string
    & {:keys [mode] :or {mode :quiet}}]
+  (swap!  *dirty* (fn [x] nil))
   (if (nil? @*lexer*)
     (println "lexer not set up")
     (let [strinput (ANTLRInputStream. the-string)
@@ -144,7 +155,7 @@
               ;; (println (.toStringTree tree))
               ;;(println (.getText tree))
              ))))))
-  nil)
+  @*dirty*)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (def ^:dynamic *parser* (atom nil))
@@ -179,15 +190,6 @@
     (make-lexer lexis))
   (if (nil? @*parser*)
       (swap! *parser* (fn [x] syntaxis))))
-
-(defmacro mk-parser [p toks] `(new ~p ~toks))
-
-#_(defn mk-lexer [in] (eval
-                     `(new
-                       ~(Class/forName "cljLexer") ;;(str @*lexer*))
-                       in)))
-
-#_(defn foo [k s] (new (Class/forName k) s))
 
 (defn parse-string
   [^String the-string

@@ -203,8 +203,6 @@ FFIRST : 'ffirst' ;
 NFIRST : 'nfirst' ;
 SECOND : 'second' ;
 
-OP     :  ADD | SUB | MUL | DIV | EQ ;
-
 // sequence lib http://clojure.org/sequences#Sequences-The%20Seq%20interface
 SEQ : 'seq' ;
 FIRST : 'first' ;
@@ -255,6 +253,13 @@ REDUCTIONS : 'reductions' ;
 MAP_INDEXED : 'map-indexed' ;
 SEQUE : 'seque' ;
 
+OP     :  ADD | SUB | MUL | DIV | EQ ;
+
+ADD    :  '+' {stops.contains(Character.toString((char)_input.LA(1)))}? ;
+SUB    :  '-' {stops.contains(Character.toString((char)_input.LA(1)))}? ;
+MUL    :  '*' {stops.contains(Character.toString((char)_input.LA(1)))}? ;
+DIV    :  '/' {stops.contains(Character.toString((char)_input.LA(1)))}? ;
+
 // trailing {...}? is an antlr 4 "semantic predicate"; it must be true
 // for the match to work.  in this case, the predicate means that
 // these ops must be followed by whitespace if they are not part of a
@@ -262,8 +267,5 @@ SEQUE : 'seque' ;
 // but +1 is a valid clojure (symbol) name part try this:
 // (def user/-1/ 0)
 // (+ user/-1 1) => 1
-ADD    :  '+' {stops.contains(Character.toString((char)_input.LA(1)))}? ;
-SUB    :  '-' {stops.contains(Character.toString((char)_input.LA(1)))}? ;
-MUL    :  '*' {stops.contains(Character.toString((char)_input.LA(1)))}? ;
-DIV    :  '/' {stops.contains(Character.toString((char)_input.LA(1)))}? ;
+
 
