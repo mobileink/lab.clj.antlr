@@ -10,6 +10,25 @@ fragment LETTER
         {Character.isJavaIdentifierStart(Character.toCodePoint((char)_input.LA(-2), (char)_input.LA(-1)))}?
     ;
 
+// use of fragments below forces lexer to pass token rather than char
+// literal, e.g. LPAREN instead of '(' . This makes token lists easier
+// to handle, since ' is special in Clojure.
+
+fragment SLASH_FRAG  :  '/' ;
+SLASH  : SLASH_FRAG  ;
+fragment LPAREN_FRAG :  '(' ;
+LPAREN : LPAREN_FRAG ;
+fragment RPAREN_FRAG :  ')' ;
+RPAREN : RPAREN_FRAG ;
+fragment LBRACK_FRAG :  '[' ;
+LBRACK : LBRACK_FRAG ;
+fragment RBRACK_FRAG :  ']' ;
+RBRACK : RBRACK_FRAG ;
+fragment LBRACE_FRAG :  '{' ;
+LBRACE : LBRACE_FRAG ;
+fragment RBRACE_FRAG :  '}' ;
+RBRACE : RBRACE_FRAG ;
+// DELIM : '(' | ')' | '[' | ']' | '{' | '}' ;
 
 fragment
 DIGIT
@@ -22,12 +41,3 @@ NonZeroDigit
     :   [1-9]
     ;
 
-SLASH  :  '/' ;
-LPAREN :  '(' ;
-RPAREN :  ')' ;
-LBRACK :  '[' ;
-RBRACK :  ']' ;
-LBRACE :  '{' ;
-RBRACE :  '}' ;
-
-// DELIM : '(' | ')' | '[' | ']' | '{' | '}' ;
