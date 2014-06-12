@@ -1,7 +1,6 @@
 lexer grammar cljLexer ;
 
-import alphabet, literals, constants // symbols
-;
+import alphabet, constants, literals ;
 
 // we'd like to import the symbols grammar, but modes don't work in
 // imported lex grammars
@@ -64,6 +63,8 @@ tokens {KW_SENTINEL,KW_NM,MAYBE_SYM_NS,SYM_NM,MAYBE_SYM_NM,MAYBE_KW_NS,MAYBE_KW_
 // NOTE: we could do the same for other "stop" chars,
 // like '@', '%', etc - syms that are not in the
 // HARF class (see below).
+
+SPECIAL :  DEFN|DEFMACRO|DEF|DO|FN|IF|LET|LOOP|QUOTE|OR|RECUR|VAR ;
 
 BAD_SYM_COLONS_EMBEDDED
     : NM_START

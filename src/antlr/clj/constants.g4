@@ -11,7 +11,7 @@ NS_CLJ_LANG : 'clojure.lang' ;
 
 // specials
 
-//SPECIAL :  DEF | DEFN | OR ;
+//SPECIAL :  DEF | DEFN | DO | FN | IF | LET | LOOP | QUOTE | OR | RECUR | VAR ;
 DEF : 'def' ;
 IF : 'if' ;
 DO : 'do' ;
