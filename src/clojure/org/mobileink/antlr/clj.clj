@@ -78,17 +78,17 @@
                              ;; only save most recent error
                              (reset! *dirty* msg)
                              ;; (print "LEX ERROR: ")
-                             (println "r: " r)
-                             (println "r: " (.getToken r))
-                             (println "r: " (.getText r))
+                             ;; (println "r: " r)
+                             ;; (println "r: " (.getToken r))
+                             ;; (println "r: " (.getText r))
                              ;; (doseq [item (.getTokenNames r)]
                              ;;            (println "toknm: " item))
-                             (println "badtok: " (.getOffendingToken
-                                                  e))
+                             ;; (println "badtok: " (.getOffendingToken
+                             ;;                      e))
                              ;;(println "obj: " badsym)
                              ;; (println "line: " line)
                              ;; (println "col:  " col)
-                             (println msg)
+                             ;; (println msg)
                              ;; (println "e: " (.toString e))
 
 ;; TODO: make it return err code rather than throw exception
@@ -139,23 +139,29 @@
 
       ;; TODO: return non-nil on scan exception
 
-      (if (= mode :quiet)
-        (do)
-        (do
-          (println "text: " the-string)
-          (let
-              [seqtoks (iterator-seq (.iterator (.getTokens tokens)))]
-            (do
-              (doall (map (fn [tok]
-                            (print (format "lex: %s  %s %s\n"
-                                           (.toString tok)
-                                           (.getType tok)
-                                           (get @*tokmap* (.getType tok)))))
-                          seqtoks))
-              ;; (println (.toStringTree tree))
-              ;;(println (.getText tree))
-             ))))))
-  @*dirty*)
+      (let
+          [seqtoks (iterator-seq (.iterator (.getTokens tokens)))]
+        (if (not= mode :quiet)
+          (do
+            (println "text: " the-string)
+            (doall (map (fn [tok]
+                          (print (format "lex: %s  %s %s\n"
+                                         (.toString tok)
+                                         (.getType tok)
+                                         (get @*tokmap* (.getType tok)))))
+                        seqtoks))))
+        ;; (println (.toStringTree tree))
+        ;;(println (.getText tree))
+        (if (nil? @*dirty*)
+          ;(doall
+          ;;(clojure.string/join " "
+          (doall
+           (map #(symbol (get @*tokmap* (.getType %)))
+               seqtoks))
+                 ;;(format "%s" (get @*tokmap* (.getType tok))))
+               ;;(print (format "%s " (get @*tokmap* (.getType tok)))))
+           ;)
+          @*dirty*)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (def ^:dynamic *parser* (atom nil))
