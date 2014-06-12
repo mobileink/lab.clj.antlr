@@ -30,96 +30,127 @@
 /**
 clojure literal syntax.  based on Java8 grammar
  */
-lexer grammar literals;
 
-//import alphabet ;
+// clojure.lang.LispReader.java intPat regex:
+// ([-+]?)(?:(0)|([1-9][0-9]*)|0[xX]([0-9A-Fa-f]+)|0([0-7]+)|([1-9][0-9]?)[rR]([0-9A-Za-z]+)|0[0-9]+)(N)?
 
-// lit: literal+ EOF;
+// the grammar here is based on the Java grammar in the antlr repo,
+// which is based on the language defn:
+// Java §3.10.1 Integer Literals
+// http://docs.oracle.com/javase/specs/jls/se7/html/jls-3.html#jls-3.10.1
+
+// DIFFERENCES:
+// Java allows underscores in numeric lits, e.g. 0xFF_FF, 0b0111_0111
+// Clojure does not.
+
+// Java supports binary syntax:  0b01010
+// Clojure does not; instead us radix notation: 2r01010
+
+// Longs: Java supports type suffixes: 99L, 0xFFl, etc.
+// Clojure does not; it figures out the right representation
+
+// BigInt is Clojure-specific:  123N
+// BigDecimal is Clojure-specific:  123M
+
+// Floating point: Clojure disallows the [fF] suffix; it reads floats
+// as doubles or BigDecimal with M suffix:
+// user=> (class 2.5)
+// java.lang.Double
+// user=> (class 2.5M)
+// java.math.BigDecimal
+// Java allows floats to start with '.', e.g.  .2
+// Clojure disallows this
+
+// Hex floating point, e.g. 0x1.8p1: disallowed
+
+// WARNING:  0123 is octal notation
+// 0123 = 83 dec; 0123N = 83 dec; but 0123M = 123 dec
+
+// see radix.g4 for radix notation e.g. 16rFF = 0xFF
+
+// WARTS: The official Java (1.7) grammar treats e.g. -1, +1 as
+// expressions - syntactic phrases combining '-' or '+' with a numeral
+// literal.  We don't think that makes sense, harrumph.  After all,
+// so-called 'literals' like '123' or '0xFF' are also expressions.  So we
+// treat the unary -/+ syms as part of the literal.
+
+
+
+lexer grammar literals ;
+
+import radix ;
+
+// Numeral
+//     :   ('+' | '-')? IntegerNumeral
+//     |   ('+' | '-')? FloatingPointNumeral
+//     ;
 
 Literal
-    :   IntegerLiteral
-    |   FloatingPointLiteral
-    |   CharacterLiteral
+    :   CharacterLiteral
     |   StringLiteral
     |   BooleanLiteral
     |   NilLiteral
     ;
 
-// Java §3.10.1 Integer Literals
-// http://docs.oracle.com/javase/specs/jls/se7/html/jls-3.html#jls-3.10.1
-IntegerLiteral
-    :   DecimalIntegerLiteral
-    |   HexIntegerLiteral
-    |   OctalIntegerLiteral
-    |   BinaryIntegerLiteral
-    ;
+// IntegerNumeral
+//     :   DecimalNumeral
+//     |   HexNumeral
+//     |   OctalNumeral
+//     |   RadixNumeral     // defined in radix.g4
+//     ;
 
-fragment
-DecimalIntegerLiteral
-    :   DecimalNumeral IntegerTypeSuffix?
-    ;
+// IntegerLiteral
+//     :   DecimalIntegerLiteral
+//     |   HexIntegerLiteral
+//     |   OctalNumeral
+//     |   RadixIntegerLiteral     // defined in radix.g4
+//     ;
 
-fragment
-HexIntegerLiteral
-    :   HexNumeral IntegerTypeSuffix?
-    ;
-
-fragment
-OctalIntegerLiteral
-    :   OctalNumeral IntegerTypeSuffix?
-    ;
-
-fragment
-BinaryIntegerLiteral
-    :   BinaryNumeral IntegerTypeSuffix?
-    ;
-
-fragment
-IntegerTypeSuffix
-    :   [lL]
-    ;
-
-fragment
+//fragment
 DecimalNumeral
-    :   '0'
-    |   NonZeroDigit (Digits? | Underscores Digits)
+    : ('+' | '-')? [02-9]
+    | ('+' | '-')? NonZeroDigit Digits?
     ;
+
+BadDecimal : ('+' | '-')? [1-9] ~[xXrR \t\r\n]+ ;
+
+// fragment
+// DecimalIntegerLiteral
+//     :   DecimalNumeral
+//     ;
+
+//fragment
+HexNumeral :  ('+' | '-')? '0' [xX] HexDigits ;
+
+BadHex :  ('+' | '-')? '0' [xX] ~[ \t\r\n]+ ;
+
+// fragment
+// HexIntegerLiteral
+//     :   HexNumeral
+//     ;
+
+// fragment
+// DecimalNumeral
+//     :   '0'
+//     |   NonZeroDigit Digits
+//     ;
 
 fragment
 Digits
-    :   DIGIT (DigitOrUnderscore* DIGIT)?
+    :   '0'
+    |   NonZeroDigit
     ;
+
+// DIGIT - see alphabet.g4
 
 // fragment
-// Digit
-//     :   '0'
-//     |   NonZeroDigit
+// HexNumeral
+//     :   '0' [xX] HexDigits
 //     ;
-
-// fragment
-// NonZeroDigit
-//     :   [1-9]
-//     ;
-
-fragment
-DigitOrUnderscore
-    :   DIGIT
-    |   '_'
-    ;
-
-fragment
-Underscores
-    :   '_'+
-    ;
-
-fragment
-HexNumeral
-    :   '0' [xX] HexDigits
-    ;
 
 fragment
 HexDigits
-    :   HexDigit (HexDigitOrUnderscore* HexDigit)?
+    :   HexDigit+
     ;
 
 fragment
@@ -127,67 +158,23 @@ HexDigit
     :   [0-9a-fA-F]
     ;
 
-fragment
-HexDigitOrUnderscore
-    :   HexDigit
-    |   '_'
-    ;
+//fragment
+OctalNumeral :  ('+' | '-')? '0' OctalDigit+ ;
+
+BadOctal :  ('+' | '-')? '0' ~[ \t\r\n]+ ;
 
 fragment
-OctalNumeral
-    :   '0' Underscores? OctalDigits
-    ;
-
-fragment
-OctalDigits
-    :   OctalDigit (OctalDigitOrUnderscore* OctalDigit)?
-    ;
-
-fragment
-OctalDigit
-    :   [0-7]
-    ;
-
-fragment
-OctalDigitOrUnderscore
-    :   OctalDigit
-    |   '_'
-    ;
-
-fragment
-BinaryNumeral
-    :   '0' [bB] BinaryDigits
-    ;
-
-fragment
-BinaryDigits
-    :   BinaryDigit (BinaryDigitOrUnderscore* BinaryDigit)?
-    ;
-
-fragment
-BinaryDigit
-    :   [01]
-    ;
-
-fragment
-BinaryDigitOrUnderscore
-    :   BinaryDigit
-    |   '_'
-    ;
+OctalDigit : [0-7] ;
 
 // §3.10.2 Floating-Point Literals
 
-FloatingPointLiteral
-    :   DecimalFloatingPointLiteral
-    |   HexadecimalFloatingPointLiteral
-    ;
+FloatingPointNumeral : ('+' | '-')? DecimalFloatingPointLiteral ;
 
 fragment
 DecimalFloatingPointLiteral
-    :   Digits '.' Digits? ExponentPart? FloatTypeSuffix?
-    |   '.' Digits ExponentPart? FloatTypeSuffix?
-    |   Digits ExponentPart FloatTypeSuffix?
-    |   Digits FloatTypeSuffix
+    :   Digits '.' Digits? ExponentPart?
+    // |   '.' Digits ExponentPart?
+    |   Digits ExponentPart
     ;
 
 fragment
@@ -208,32 +195,6 @@ SignedInteger
 fragment
 Sign
     :   [+-]
-    ;
-
-fragment
-FloatTypeSuffix
-    :   [fFdD]
-    ;
-
-fragment
-HexadecimalFloatingPointLiteral
-    :   HexSignificand BinaryExponent FloatTypeSuffix?
-    ;
-
-fragment
-HexSignificand
-    :   HexNumeral '.'?
-    |   '0' [xX] HexDigits? '.' HexDigits
-    ;
-
-fragment
-BinaryExponent
-    :   BinaryExponentIndicator SignedInteger
-    ;
-
-fragment
-BinaryExponentIndicator
-    :   [pP]
     ;
 
 // §3.10.3 Boolean Literals

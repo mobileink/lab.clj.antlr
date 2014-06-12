@@ -28,50 +28,50 @@ pair: (sexp | kw | sym | Literal) (sexp | kw | sym | Literal) ;
 sym
     // : id_ns? id_nm
     : (sym_ns SLASH)? sym_nm
-        {
-            if ($sym.text.indexOf("::", 1) >= 0)
-                {
-                    notifyErrorListeners("EXCEPTION: parser: embedded '::' in '"
-                                         + $sym.text
-                                         + "'");
-                }
-            if ($sym_ns.text!=null) {
-                if ($sym_ns.text.endsWith(":")) {
-                    notifyErrorListeners("EXCEPTION parser: trailing ':' in '"
-                                         + $sym_ns.text
-                                         + "'");
-                }}
-            if ($sym_nm.text!=null) {
-                if ($sym_nm.text.endsWith(":")) {
-                    notifyErrorListeners("EXCEPTION parser: trailing ':' in '"
-                                         + $sym_nm.text
-                                         + ";");
-                }}
-        }
+        // {
+        //     if ($sym.text.indexOf("::", 1) >= 0)
+        //         {
+        //             notifyErrorListeners("EXCEPTION: parser: embedded '::' in '"
+        //                                  + $sym.text
+        //                                  + "'");
+        //         }
+        //     if ($sym_ns.text!=null) {
+        //         if ($sym_ns.text.endsWith(":")) {
+        //             notifyErrorListeners("EXCEPTION parser: trailing ':' in '"
+        //                                  + $sym_ns.text
+        //                                  + "'");
+        //         }}
+        //     if ($sym_nm.text!=null) {
+        //         if ($sym_nm.text.endsWith(":")) {
+        //             notifyErrorListeners("EXCEPTION parser: trailing ':' in '"
+        //                                  + $sym_nm.text
+        //                                  + ";");
+        //         }}
+        // }
     ;
 
 kw
     : KW_SENTINEL (kw_ns SLASH)? kw_nm
-        {
-            if ($kw.text.indexOf("::", 1) >= 0)
-                {
-                    notifyErrorListeners("EXCEPTION: parser: embedded '::' in '"
-                                         + $kw.text
-                                         + "'");
-                }
-            if ($kw_ns.text!=null) {
-                if ($kw_ns.text.endsWith(":")) {
-                    notifyErrorListeners("EXCEPTION parser: trailing ':' in '"
-                                         + $kw_ns.text
-                                         + "'");
-                }}
-            if ($kw_nm.text!=null) {
-                if ($kw_nm.text.endsWith(":")) {
-                    notifyErrorListeners("EXCEPTION parser: trailing ':' in '"
-                                         + $kw_nm.text
-                                         + ";");
-                }}
-        }
+        // {
+        //     if ($kw.text.indexOf("::", 1) >= 0)
+        //         {
+        //             notifyErrorListeners("EXCEPTION: parser: embedded '::' in '"
+        //                                  + $kw.text
+        //                                  + "'");
+        //         }
+        //     if ($kw_ns.text!=null) {
+        //         if ($kw_ns.text.endsWith(":")) {
+        //             notifyErrorListeners("EXCEPTION parser: trailing ':' in '"
+        //                                  + $kw_ns.text
+        //                                  + "'");
+        //         }}
+        //     if ($kw_nm.text!=null) {
+        //         if ($kw_nm.text.endsWith(":")) {
+        //             notifyErrorListeners("EXCEPTION parser: trailing ':' in '"
+        //                                  + $kw_nm.text
+        //                                  + ";");
+        //         }}
+        // }
     ;
 
 kw_ns: KW_NS ;

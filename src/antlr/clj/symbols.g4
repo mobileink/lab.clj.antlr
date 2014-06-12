@@ -1,141 +1,387 @@
-lexer grammar symbols;
+lexer grammar symbols ;
 
-import alphabet;
+import alphabet ;
 
-// @lexer::members { // add members to generated symParser
-//             String stops = " \t\n";
-// }
+tokens {KW_SENTINEL,KW_NM,MAYBE_SYM_NS,MAYBE_SYM_NM,MAYBE_KW_NS,MAYBE_KW_NM,SYM_NS,WHITESPACE,COMMENTS,BAD_SYM_TERMINAL_COLON}
 
+// %%%%%%%%%%%%%%%%
 
-// symbol = (<namespace-id> '/')?  <name>
-
-// this structure is recognized by the parser - see rule
-// id_symbol. the lexer recognizes <namespace-id> and <name> tokens,
-// (as ID_NS and IS_NM, respectively) but not symbols
-
-// the informal clojure spec (http://clojure.org/reader) does not
-// match the operational semantics defined by the code itself.  for
-// example, the spec says "'/' has special meaning, it can be used
-// once in the middle of a symbol to separate the namespace from the
-// name, e.g. my-namespace/foo."  But the code
-// (https://github.com/clojure/clojure/blob/master/src/jvm/clojure/lang/LispReader.java)
-// says the symbol regex is
-
-//       [:]?([\\D&&[^/]].*/)?(/|[\\D&&[^/]][^/]*)
-
-// which allows any number of '/' in the namespace part.
-
-// but here's the problem.  the first parse matches the regex, which
-// puts all the '/' in the ns part.  but when (after some other
-// checks) the symbol gets interned (clojure.lang.Symbol$intern), the
-// code just looks for the first '/' and interns the rest.  I think
-// that's why we get:
-
-//  user=> (namespace 'a/b/c/d) => "a"
-//  user=> (name 'a/b/c/d) => "b/c/d"
-
-// so for the moment we punt and reject '/' from both namespace and name parts of symbols
+// See below for explanation of NS_START and NM_START
 
 
-// NB:  unicode char syntax not allowed in symbols? i.e. a/u0064 is illegal as a symbol
+// WARTS
+// clojure repl allows (symbol "-1234") and '-1234
+// but rejects (def -1234 5) and (def '-1234 5)
+// with "First argument to def must be a Symbol"
+//
+// user=> (def a (symbol "-99"))
+// #'user/a
+// user=> a
+// -99
+// user=> (class a)
+// clojure.lang.Symbol
 
+// same with keywords:
+// user=> :-12
+// :-12
+// user=> :-12/-34
+// :-12/-34
 
-// for testing only. we want sym, kw ids to be parsed so we can get at them in
-// the tree walker
+// with proper syms: '-foo is ok:
+// user=> (def -foo 9)
+// #'user/-foo
 
-// ID_SYMBOL
-//     : ID_KW
-//     | ID_SYM
-//     ;
+// ':' handling:
+// PASS:  'a', 'a:b', 'a:b:c:z', ':a', ':a:b', ':a:b:c:z' etc.
+// PASS:  'a:b/c', 'a/b:c', 'a:b/c:d' etc.
+// FAIL:  ':a:', ':a:b:', ':a/b:' etc. (no trailing ':')
 
-// ID_KW : ':' (ID_NS '/')? ID_NM ;
-//ID_SYM: (ID_NS '/')? ID_NM ;
-// end testing
+// PASS:  '::a', '::a:b', etc.
+// FAIL:  '::a/b', '::a/b:c, '::a:b/c', etc.
+// FAIL:  ':::a', ':a::b' ':a/b::c' etc. (no embedded '::')
 
+// STRATEGY: we detect these violations in the lexer using actions.
+// We could use predicates, but then the strings would not
+// be tokenized the way we want.
+// E.g. we want 'a::b' to be tokenized as is, but flagged as illegal,
+// With predicates it would be tokenized as 'a:' (illegal) plus ':b' (legal)
+// so e.g. a::b: will trigger two exception messages
 
-// sym syntax is ill-defined between clojure code and desc
-// so we have two modes strict and loose
-// strict means: ns and nm have same grammar:
-// no '/', no trailing ':', no internal '::'
+// In other words, we want to recognize a class of known violations
+// as "bad tokens" instead of trying to find some partial recog.
+// this makes it easier for the user to see what's wrong.
 
-// default: mode LOOSE allows '/' in ns part:
-// symbolPat = [:]?([\\D&&[^/]].*/)?(/|[\\D&&[^/]][^/]*)
+// NOTE: we could do the same for other "stop" chars,
+// like '@', '%', etc - syms that are not in the
+// HARF class (see below).
 
-//fragment
-//ID_NS : CHAR_START (LETTER | DIGIT | HARF | '/')*? ;
-
-// here the semantic predicate prevents matching e.g. abc/def/ghi
-//fragment
-//ID_KW :;
-// ID_KW : ':' CHAR_START (LETTER | DIGIT | HARF)* ; //'/'
-    //     {getText().indexOf("::", 1) < 0}?
-    //     {!(getText().endsWith(":"))}?
-    // ;
-        // {1<0}?
-        // {System.out.println("namespace " + getText() + " may not contain '::'");}
-        // {getText().indexOf("::", 1) >= 0}?
-        // {getText().endsWith(":")}?
-        // {System.out.println("namespace " + getText() + " may not end with ':'");}
-        // {(getText().indexOf("::", 1) < 0)
-        //     &&
-        //     (!getText().endsWith(":"))
-        // }?
-        // {getText().indexOf("::", 1) != -1}?
-        // {System.out.println("namespace " + getText() + " may not contain '::'");}
-        // {getText().endsWith(":")}?
-        // {System.out.println("namespace " + getText() + " may not end with ':'");}
-        // no trailing ':'; no internal '::'
-        // {' '==(char)_input.LA(1)}? ;
-    // ;
-
-// ID_KW : ':' CHAR_START (LETTER | DIGIT | HARF)*
-//     ;
-
-ID : CHAR_START (LETTER | DIGIT | HARF)*
-        {if (getText().startsWith(":")) {
-                System.out.println("changing type from sym to kw" + getText());
-                setType(CHAR_START);
-            }
-        }
-        // {!(getText().endsWith(":"))}?
-        // {' '==(char)_input.LA(1)}? // WS
+BAD_SYM_COLONS_EMBEDDED
+    : NM_START
+        (LETTER | DIGIT | HARF | '/')*
+        '::'
+        (LETTER | DIGIT | HARF | '/')+
     ;
 
-        //{System.out.println("namespace " + getText() + " may not contain '::'");}
-        //{System.out.println("namespace may not end with ':'");}
-        //{getText().equals("enum")}?
+BAD_SYM_TERMINAL_COLON1
+    : NM_START (LETTER | DIGIT | HARF | MACRO_TERMINATING )*
+        ':/'
+        (LETTER | DIGIT | HARF | MACRO_TERMINATING )*
+        ':'?
+        -> type(BAD_SYM_TERMINAL_COLON)
+    ;
 
-        // {if (getText().indexOf("::", 1) >= 0) {
-        //         throw new IllegalStateException("illegal embedded '::'");
-        //     }
-        //        {getText().indexOf("::", 1) >= 0}?
-        // {System.out.println("namespace " + getText() + " may not contain '::'");}
-        // {getText().endsWith(":")}?
-        // {System.out.println("namespace " + getText() + " may not end with ':'");}
- //     else
-        //         if (getText().endsWith(":")) {
-        //         throw new IllegalStateException("illegal trailing ':'");
-        //     }
+BAD_SYM_TERMINAL_COLON2
+    : NM_START (LETTER | DIGIT | HARF | MACRO_TERMINATING | '/')*
+        ':'
+        -> type(BAD_SYM_TERMINAL_COLON)
+    ;
+
+BAD_SYM_MACRO
+    : NM_START (LETTER | DIGIT | HARF | '/')*
+        MACRO_TERMINATING+
+        NS_START (LETTER | DIGIT | HARF | '/')*
+    ;
+
+KW_SENTINEL
+    : ':'
+        {
+            // System.out.println("KW_SENTINEL");
+        }
+        -> pushMode(KW)
+    ;
+
+SYM_NS
+    : NS_START (LETTER | DIGIT | HARF)*
+        {_input.LA(1) == '/'}?
+        {
+            // System.out.println("SYM_NS: " + getText());
+            if (getText().endsWith(":")) {
+                RecognitionException re
+                    = new LexerNoViableAltException(
+                                               this,
+                                               getInputStream(),
+                                               getCharIndex(),
+                                               new ATNConfigSet(true));
+                notifyListeners((LexerNoViableAltException)re);
+                setType(MAYBE_SYM_NS);
+                // System.out.println("SYM_NS LEX EXCEPTION: terminal ':' in "
+                //                    + getText());
+            }
+            if (getText().indexOf("::", 1) >= 0) {
+                RecognitionException re
+                    = new LexerNoViableAltException(
+                                                    this,
+                                                    getInputStream(),
+                                                    getCharIndex(),
+                                                    new ATNConfigSet(true));
+                notifyListeners((LexerNoViableAltException)re);
+                setType(MAYBE_SYM_NS);
+                // System.out.println("SYM_NS LEX EXCEPTION: embedded '::' in "
+                //                    + getText());
+            }
+        }
+        -> pushMode(SYM)
+    ;
+
+SYM_NMX : NS_START (LETTER | DIGIT | HARF)*
+        {!getText().endsWith(":")}?
+        {
+            // System.out.println("SYM_NM: " + getText());
+            setType(SYM_NM);
+            if (getText().endsWith(":")) {
+                // ATNConfigSet atncfg = new ATNConfigSet();
+                RecognitionException re
+                    = new LexerNoViableAltException(
+                                                    this,
+                                                    getInputStream(),
+                                                    getCharIndex(),
+                                                    new ATNConfigSet(true));
+                notifyListeners((LexerNoViableAltException)re);
+                setType(MAYBE_SYM_NM);
+                // System.out.println("SYM_NM LEX EXCEPTION: terminal ':' in "
+                //                    + getText());
+            }
+            if (getText().indexOf("::", 1) >= 0) {
+                // ATNConfigSet atncfg = new ATNConfigSet();
+                RecognitionException re
+                    = new LexerNoViableAltException(
+                                                    this,
+                                                    getInputStream(),
+                                                    getCharIndex(),
+                                                    new ATNConfigSet(true));
+                notifyListeners((LexerNoViableAltException)re);
+                setType(MAYBE_SYM_NM);
+                // System.out.println("SYM_NM LEX EXCEPTION: embedded '::' in "
+                //                    + getText());
+            }
+        }
+    | '/'
+    ;
+
+// ================================================================
+mode KW;
+KW_SEP : '/'
+        {
+            // System.out.println("KW_SEP: " + getText());
+            if (_input.LA(-2) == ':') { // prevent ':/'
+                RecognitionException re
+                    = new LexerNoViableAltException(
+                                                    this,
+                                                    getInputStream(),
+                                                    getCharIndex(),
+                                                    new ATNConfigSet());
+                notifyListeners((LexerNoViableAltException)re);
+                setType(MAYBE_KW_NS);
+            } else {
+                setType(SLASH);
+            }
+        }
+    ;
+
+KW_NS
+    : NS_START (LETTER | DIGIT | HARF)*
+        // {_input.LA(1) != '/'}?
+        // {//  :foo
         // }
-        // {System.out.println("ID '" + getText() + "' may not end with ':'");}
-        // no trailing ':'; no internal '::'
-        // {' '==(char)_input.LA(1)}? ;
-    // ;
+        {_input.LA(1) == '/'}?
+        {
+            // System.out.println("KW_NS: " + getText());
+            if (getText().endsWith(":")) {
+                // ATNConfigSet atncfg = new ATNConfigSet();
+                RecognitionException re
+                    = new LexerNoViableAltException(
+                                                    this,
+                                                    getInputStream(),
+                                                    getCharIndex(),
+                                                    new ATNConfigSet());
+                notifyListeners((LexerNoViableAltException)re);
+                setType(MAYBE_KW_NS);
+                //         System.out.println("KW_NS LEX EXCEPTION: terminal ':' in "
+                //                            + getText());
+            }
+            if (getText().indexOf("::", 1) >= 0) {
+                if (getText().endsWith(":")) {
+                    // ATNConfigSet atncfg = new ATNConfigSet();
+                    RecognitionException re
+                        = new LexerNoViableAltException(
+                                                        this,
+                                                        getInputStream(),
+                                                        getCharIndex(),
+                                                        new ATNConfigSet());
+                    notifyListeners((LexerNoViableAltException)re);
+                    setType(MAYBE_KW_NS);
+                }
+            }
+        }
+    ;
 
-// fragment CHAR_START :  LETTER |  HARF |  ':'  ;
+// BAD_KW_NS_COLON : NS_START (LETTER | DIGIT | HARF | MACRO_TERMINATING )* ':'
+//     ;
+
+// BAD_KW_NS_MACRO : NS_START (LETTER | DIGIT | HARF | MACRO_TERMINATING )*
+//     ;
+
+KW_NM : NM_START (LETTER | DIGIT | HARF)*
+        {!getText().endsWith(":")}?
+        {
+            // System.out.println("KW_NM: " + getText());
+            if (getText().endsWith(":")) {
+                // ATNConfigSet atncfg = new ATNConfigSet();
+                RecognitionException re
+                    = new LexerNoViableAltException(
+                                                    this,
+                                                    getInputStream(),
+                                                    getCharIndex(),
+                                                    new ATNConfigSet());
+                notifyListeners((LexerNoViableAltException)re);
+                setType(MAYBE_KW_NM);
+                //         System.out.println("KW_NM LEX EXCEPTION: terminal ':' in "
+                //                            + getText());
+            }
+            if (getText().indexOf("::", 1) >= 0) {
+                // ATNConfigSet atncfg = new ATNConfigSet();
+                RecognitionException re
+                    = new LexerNoViableAltException(
+                                                    this,
+                                                    getInputStream(),
+                                                    getCharIndex(),
+                                                    new ATNConfigSet());
+                notifyListeners((LexerNoViableAltException)re);
+                setType(MAYBE_KW_NM);
+            }
+        }
+        -> popMode
+    ;
+
+BAD_KW_NM_COLON : NM_START (LETTER | DIGIT | HARF | MACRO_TERMINATING )* ':'
+    ;
+
+// BAD_KW_NM_MACRO : NM_START (LETTER | DIGIT | HARF | MACRO_TERMINATING )*
+//     ;
+
+// ID_NS :     CHAR_START (LETTER | DIGIT | HARF)* '/' ;
+
+// ================================================================
+mode SYM;
+SYM_SEP
+    : '/'
+        {_input.LA(1) == '/'}? // e.g. clojure.core//
+        {
+            // System.out.println("SYM_SEP: " + getText());
+            setType(SLASH);
+        }
+        -> mode(DIVOP)
+    ;
+// if the SYM_SEP predicate is false, the whole match fails
+// so we need the same prod again, without the predicate
+// to match in that case, e.g.  a/b
+SYM_SEP2
+    : '/'
+        {
+            // System.out.println("SYM_SEP: " + getText());
+            setType(SLASH);
+        }
+    ;
+
+SYM_NM
+: (
+     NM_START (LETTER | DIGIT | HARF)*
+        {!getText().endsWith(":")}?
+        {
+            // System.out.println("SYM_NM: " + getText());
+            setType(SYM_NM);
+            if (getText().endsWith(":")) {
+                ATNConfigSet atncfg = new ATNConfigSet();
+                RecognitionException re
+                    = new LexerNoViableAltException(
+                                                    this,
+                                                    getInputStream(),
+                                                    getCharIndex(),
+                                                    new ATNConfigSet());
+                notifyListeners((LexerNoViableAltException)re);
+                setType(MAYBE_SYM_NM);
+                // System.out.println("SYM_NMX LEX EXCEPTION: terminal ':' in "
+                //                    + getText());
+            }
+            if (getText().indexOf("::", 1) >= 0) {
+                ATNConfigSet atncfg = new ATNConfigSet();
+                RecognitionException re
+                    = new LexerNoViableAltException(
+                                                    this,
+                                                    getInputStream(),
+                                                    getCharIndex(),
+                                                    new ATNConfigSet());
+                notifyListeners((LexerNoViableAltException)re);
+                setType(MAYBE_SYM_NM);
+                // System.out.println("SYM_NMX LEX EXCEPTION: embedded '::' in "
+                //                    + getText());
+            }
+        }
+    | '/'
+    ) -> popMode
+    ;
+
+// BAD_SYM_NSNM_COLON : NM_START (LETTER | DIGIT | HARF | MACRO_TERMINATING )* ':'
+//     ;
+
+// BAD_SYM_NSNM_MACRO : NM_START (LETTER | DIGIT | HARF | MACRO_TERMINATING )*
+//     ;
+
+mode DIVOP;
+DIVSYM : '/'
+        {
+            // System.out.println("DIVOP");
+                setType(SYM_NM);
+        }
+        -> popMode
+    ;
+
+mode DEFAULT_MODE;
+// ID_NM :     CHAR_START (LETTER | DIGIT | HARF)*
+//         {
+//             System.out.println("SYM_NM: " + getText());
+//             if (getText().startsWith(":")) {
+//                 // System.out.println("changing type from sym to kw" + getText());
+//                 setType(KW_NM);
+//                 //         // set mode to SYM mode
+//                 //         //
+//             }
+//         }
+//     ;
+
+
+// ======== START CHARS ========
+// Syntax of kws:  ':' (ns '/')? nm
+// legal: :a/:b  illegal:  ::a/b
+// the ns part cannot start with ':', but the nm part can
+// ::a is legal, with nm part a, implicit ns part is current ns
+
+// Syntax of syms:  (ns '/')? nm
+// here ns cannot start with ':' since that would make it a kw
+// but the nm part can start with ':'
+// Summary: anything beginning with ':' is a kw
+// the ns part of a kw cannot start with ':', hence NS_START
+// the nm part of kw and syms can start with ':', like kw, hence NM_START
+
+// ':' can be embedded after first char (but not '::')
+// to deal with this and the start char conditions,
+// we use class HARF_START, which contains all allowed sym chars EXCEPT ':'
+// and HARF, which adds ':' to HARF_START
+
 fragment
-CHAR_START
+NM_START : NS_START | ':' ;
+
+fragment
+NS_START
     :  LETTER
-    |  HARF
+    |  HARF_START
     |   // covers all characters above 0xFF which are not a surrogate
         ~[\u0000-\u00FF\uD800-\uDBFF]
         {!Character.isDigit(_input.LA(-1))}?
     |   // covers UTF-16 surrogate pairs encodings for U+10000 to U+10FFFF
         [\uD800-\uDBFF] [\uDC00-\uDFFF]
         {!Character.isDigit(Character.toCodePoint((char)_input.LA(-2), (char)_input.LA(-1)))}?
-        // {Character.isJavaIdentifierStart(Character.toCodePoint((char)_input.LA(-2), (char)_input.LA(-1)))}?
     ;
-
 
 // HURUF (sg. HARF) = printable ascii except macro chars, ',', numbers and letters
 // in ascii order:
@@ -143,39 +389,38 @@ CHAR_START
 // legal: !   # $ % & '     * +   - .   :   < = > ?     \     _    |
 
 fragment
-HARF
+HARF : HARF_START | ':' ;
+
+// HARF_START excludes ':', so we can distinguish between kws and syms
+fragment
+HARF_START
     : '!'  | '#' | '$' | '%' | '&'
     | '\'' | '*' | '+' | '-'
-    | '.'  | ':' | '<' | '=' | '>'
-    | '?' | '\\' | '_' | '|' | ']' ;
+    | '.'  | '<' | '=' | '>'
+    | '?' | '\\' | '_' | '|'
+    ;
 
 //fragment
-MACRO : MACRO_TERMINATING | MACRO_NON_TERMINATING | DELIM ;
+// MACRO : MACRO_TERMINATING | MACRO_NON_TERMINATING | DELIM ;
 // ascii order
 
-fragment
+// fragment
 MACRO_TERMINATING : '"' | '`' | '~' | ';' | '\\' | '@' | '^' ;
-fragment
-MACRO_NON_TERMINATING : '#' | '%' | '\'' ;
 
-SLASH  :  '/' ;
-LPAREN :  '(' ;
-RPAREN :  ')' ;
-LBRACK :  '[' ;
-RBRACK :  ']' ;
+// WARNING: repl behavior does not match LispReader.  The
+// latter says '%' is non-terminating; the former chokes on
+// e.g.  'a%b
+// fragment
+// MACRO_NON_TERMINATING : '#' | '%' | '\'' ;
 
-DELIM : '(' | ')' | '[' | ']' | '{' | '}' ;
+//mode STRICT;  // no embedded '/' in syms, etc.
 
-mode STRICT;
+//mode LOOSE; // match Clojure's de facto grammar
 
 // in clojure.lang.LispReader
 // static Pattern symbolPat =
 //  Pattern.compile("[:]?([\\D&&[^/]].*/)?(/|[\\D&&[^/]][^/]*)");
 
-//fragment
-// ID_NS : CHAR_START (LETTER | DIGIT | HARF)* ;
 
-// here the semantic predicate prevents matching e.g. abc/def/ghi
-//fragment
-//ID_NM : CHAR_START (LETTER | DIGIT | HARF)* ; // {' '==(char)_input.LA(1)}? ;
+// %%%%%%%%%%%%%%%%
 

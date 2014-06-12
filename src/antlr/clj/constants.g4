@@ -1,12 +1,8 @@
 lexer grammar identifiers ;
 
-// @lexer::members { // add members to generated symParser
-// public static final int WHITESPACE = 3;
-// public static final int COMMENTS = 5;
-// public static final String stops = " \t\n";
-// }
-
-// import ws ;
+@lexer::members { // add members to generated symParser
+public static final String stops = " \t\n";
+}
 
 // standard namespaces
 NS_CLJ_CORE : 'clojure.core' ;

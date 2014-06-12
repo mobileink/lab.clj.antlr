@@ -1,30 +1,45 @@
 lexer grammar cljLexer ;
 
-tokens {KW_NM}
+import alphabet, literals, constants // symbols
+;
 
-@lexer::members {
-            public static final int WHITESPACE = 3;
-            public static final int COMMENT = 5;
-            public static final String stops = " \t\n";
-}
+// we'd like to import the symbols grammar, but modes don't work in
+// imported lex grammars
 
-import alphabet, literals ;
+////  begin symbols.g4
 
-// import
-//         symbols
-//         // literals,
-//         // identifiers
-//     ;
+// lexer grammar symbols ;
 
-// antlr's import doesn't seem to work if text refers to @lexer
-// members stuff so we must include ws and comments directly:
+// import alphabet ;
 
+tokens {KW_SENTINEL,KW_NM,MAYBE_SYM_NS,SYM_NM,MAYBE_SYM_NM,MAYBE_KW_NS,MAYBE_KW_NM,SYM_NS,WHITESPACE,COMMENTS,BAD_SYM_TERMINAL_COLON}
 
-// ID_KW : ':' CHAR_START (LETTER | DIGIT | HARF)*
-//     ;
+// %%%%%%%%%%%%%%%%
+
+// See below for explanation of NS_START and NM_START
 
 
-// See below for explanation of SYM_START and KW_START
+// WARTS
+// clojure repl allows (symbol "-1234") and '-1234
+// but rejects (def -1234 5) and (def '-1234 5)
+// with "First argument to def must be a Symbol"
+//
+// user=> (def a (symbol "-99"))
+// #'user/a
+// user=> a
+// -99
+// user=> (class a)
+// clojure.lang.Symbol
+
+// same with keywords:
+// user=> :-12
+// :-12
+// user=> :-12/-34
+// :-12/-34
+
+// with proper syms: '-foo is ok:
+// user=> (def -foo 9)
+// #'user/-foo
 
 // ':' handling:
 // PASS:  'a', 'a:b', 'a:b:c:z', ':a', ':a:b', ':a:b:c:z' etc.
@@ -50,83 +65,171 @@ import alphabet, literals ;
 // like '@', '%', etc - syms that are not in the
 // HARF class (see below).
 
+BAD_SYM_COLONS_EMBEDDED
+    : NM_START
+        (LETTER | DIGIT | HARF | '/')*
+        '::'
+        (LETTER | DIGIT | HARF | '/')+
+    ;
+
+BAD_SYM_TERMINAL_COLON1
+    : NM_START (LETTER | DIGIT | HARF | MACRO_TERMINATING )*
+        ':/'
+        (LETTER | DIGIT | HARF | MACRO_TERMINATING )*
+        ':'?
+        -> type(BAD_SYM_TERMINAL_COLON)
+    ;
+
+BAD_SYM_TERMINAL_COLON2
+    : NM_START (LETTER | DIGIT | HARF | MACRO_TERMINATING | '/')*
+        ':'
+        -> type(BAD_SYM_TERMINAL_COLON)
+    ;
+
+BAD_SYM_MACRO
+    : NM_START (LETTER | DIGIT | HARF | '/')*
+        MACRO_TERMINATING+
+        NS_START (LETTER | DIGIT | HARF | '/')*
+    ;
+
 KW_SENTINEL
     : ':'
-        // {System.out.println("KW_SENTINEL");}
+        {
+            // System.out.println("KW_SENTINEL");
+        }
         -> pushMode(KW)
     ;
 
 SYM_NS
-    : SYM_START (LETTER | DIGIT | HARF)*
+    : NS_START (LETTER | DIGIT | HARF)*
         {_input.LA(1) == '/'}?
-        // {
-        //     // System.out.println("SYM_NS: " + getText());
-        //     if (getText().endsWith(":")) {
-        //         System.out.println("SYM_NS LEX EXCEPTION: terminal ':' in "
-        //                            + getText());
-        //     }
-        //     if (getText().indexOf("::", 1) >= 0) {
-        //         System.out.println("SYM_NS LEX EXCEPTION: embedded '::' in "
-        //                            + getText());
-        //     }
-        // }
         -> pushMode(SYM)
     ;
-SYM_NM : SYM_START (LETTER | DIGIT | HARF)*
+
+// xSYM_NM_NIL_NS
+//     : ('+' | '-') DIGIT (LETTER | DIGIT | HARF)*
+//         {0>1;}
+//     ;
+
+MATHOP : '+' | '-' | '*' | '/' ;
+
+SYM_NM_NIL_NS
+    : (NS_START
+    | ('+' | '-') ~[0-9] (LETTER | DIGIT | HARF)*
+    | NS_START_NOOP (LETTER | DIGIT | HARF)*
+        // {!((getText().startsWith("+")
+        //         || getText().startsWith("-"))
+        //     && (getText().length() > 1?
+        //         Character.isDigit(getText().charAt(1))
+        //         :false))
+        // }?
         // {
-            // System.out.println("SYM_NM: " + getText());
-            // TODO: throw ANTLR errors
-            // if (getText().endsWith(":")) {
-            //     System.out.println("SYM_NM LEX EXCEPTION: terminal ':' in "
-            //                        + getText());
-            // }
-            // if (getText().indexOf("::", 1) >= 0) {
-            //     System.out.println("SYM_NM LEX EXCEPTION: embedded '::' in "
-            //                        + getText());
-            // }
+        //     System.out.println(getText().charAt(0)
+        //                        + " "
+        //                        + getText().charAt(1));
+        //     setType(SYM_NM);
         // }
-        // TODO:  allow single '/' as nm
-    | '/'
+    | '/')
+        -> type(SYM_NM)
     ;
 
 // ================================================================
 mode KW;
+KW_SEP : '/'
+        {
+            // System.out.println("KW_SEP: " + getText());
+            if (_input.LA(-2) == ':') { // prevent ':/'
+                RecognitionException re
+                    = new LexerNoViableAltException(
+                                                    this,
+                                                    getInputStream(),
+                                                    getCharIndex(),
+                                                    new ATNConfigSet());
+                notifyListeners((LexerNoViableAltException)re);
+                setType(MAYBE_KW_NS);
+            } else {
+                setType(SLASH);
+            }
+        }
+    ;
+
 KW_NS
-    : SYM_START (LETTER | DIGIT | HARF)*
+    : NS_START (LETTER | DIGIT | HARF)*
         {_input.LA(1) == '/'}?
         // {
         //     // System.out.println("KW_NS: " + getText());
         //     if (getText().endsWith(":")) {
-        //         System.out.println("KW_NS LEX EXCEPTION: terminal ':' in "
-        //                            + getText());
+        //         // ATNConfigSet atncfg = new ATNConfigSet();
+        //         RecognitionException re
+        //             = new LexerNoViableAltException(
+        //                                             this,
+        //                                             getInputStream(),
+        //                                             getCharIndex(),
+        //                                             new ATNConfigSet());
+        //         notifyListeners((LexerNoViableAltException)re);
+        //         setType(MAYBE_KW_NS);
+        //         //         System.out.println("KW_NS LEX EXCEPTION: terminal ':' in "
+        //         //                            + getText());
         //     }
         //     if (getText().indexOf("::", 1) >= 0) {
-        //         System.out.println("KW_NS LEX EXCEPTION: embedded '::'"
-        //                            + getText());
+        //         if (getText().endsWith(":")) {
+        //             // ATNConfigSet atncfg = new ATNConfigSet();
+        //             RecognitionException re
+        //                 = new LexerNoViableAltException(
+        //                                                 this,
+        //                                                 getInputStream(),
+        //                                                 getCharIndex(),
+        //                                                 new ATNConfigSet());
+        //             notifyListeners((LexerNoViableAltException)re);
+        //             setType(MAYBE_KW_NS);
+        //         }
         //     }
         // }
-        // TODO: check for embedded '::'
-        // -> pushMode(KW)
     ;
-KW_SEP : '/' -> type(SLASH);
-// TODO: handle single '/' as name part, as below for syms
-KW_NM : KW_START (LETTER | DIGIT | HARF)*
-        // {
-        //     // System.out.println("KW_NM: " + getText());
-        //     if (getText().endsWith(":")) {
-        //         System.out.println("KW_NM LEX EXCEPTION: terminal ':' in "
-        //                            + getText());
-        //     }
-        //     if (getText().indexOf("::", 1) >= 0) {
-        //         System.out.println("KW_NM LEX EXCEPTION: embedded '::' in "
-        //                            + getText());
-        //         // TODO: throw error
-        //     }
-        // }
+
+// BAD_KW_NS_COLON : NS_START (LETTER | DIGIT | HARF | MACRO_TERMINATING )* ':'
+//     ;
+
+// BAD_KW_NS_MACRO : NS_START (LETTER | DIGIT | HARF | MACRO_TERMINATING )*
+//     ;
+
+KW_NM : NM_START (LETTER | DIGIT | HARF)*
+        {!getText().endsWith(":")}?
+        {
+            // System.out.println("KW_NM: " + getText());
+            if (getText().endsWith(":")) {
+                // ATNConfigSet atncfg = new ATNConfigSet();
+                RecognitionException re
+                    = new LexerNoViableAltException(
+                                                    this,
+                                                    getInputStream(),
+                                                    getCharIndex(),
+                                                    new ATNConfigSet());
+                notifyListeners((LexerNoViableAltException)re);
+                setType(MAYBE_KW_NM);
+                //         System.out.println("KW_NM LEX EXCEPTION: terminal ':' in "
+                //                            + getText());
+            }
+            if (getText().indexOf("::", 1) >= 0) {
+                // ATNConfigSet atncfg = new ATNConfigSet();
+                RecognitionException re
+                    = new LexerNoViableAltException(
+                                                    this,
+                                                    getInputStream(),
+                                                    getCharIndex(),
+                                                    new ATNConfigSet());
+                notifyListeners((LexerNoViableAltException)re);
+                setType(MAYBE_KW_NM);
+            }
+        }
         -> popMode
-        // TODO: check for embedded '::'
-        // TODO: detect ::a make a the nm, not :a
     ;
+
+BAD_KW_NM_COLON : NM_START (LETTER | DIGIT | HARF | MACRO_TERMINATING )* ':'
+    ;
+
+// BAD_KW_NM_MACRO : NM_START (LETTER | DIGIT | HARF | MACRO_TERMINATING )*
+//     ;
 
 // ID_NS :     CHAR_START (LETTER | DIGIT | HARF)* '/' ;
 
@@ -152,27 +255,26 @@ SYM_SEP2
         }
     ;
 
-SYM_NMX
-    : (
-            KW_START (LETTER | DIGIT | HARF)*
-            {
-                // System.out.println("SYM_NMX: " + getText());
-                setType(SYM_NM);
-            }
-            // TODO:  allow single '/' as nm
-        // | '/'
-        //     {
-        //         System.out.println("SYM_NMX: " + getText());
-        //         setType(SYM_NM);
-        //     }
-        ) -> popMode
+MATHOPx : ('+' | '-' | '*' | '/')
+        {setType(MATHOP);}
+        -> popMode
     ;
 
+SYM_NM : NM_START (LETTER | DIGIT | HARF)*
+        -> popMode
+    ;
+
+// BAD_SYM_NSNM_COLON : NM_START (LETTER | DIGIT | HARF | MACRO_TERMINATING )* ':'
+//     ;
+
+// BAD_SYM_NSNM_MACRO : NM_START (LETTER | DIGIT | HARF | MACRO_TERMINATING )*
+//     ;
+
 mode DIVOP;
-DIV : '/'
+DIVSYM : '/'
         {
             // System.out.println("DIVOP");
-                setType(SYM_NM);
+                setType(MATHOP);
         }
         -> popMode
     ;
@@ -199,10 +301,10 @@ mode DEFAULT_MODE;
 
 // Syntax of syms:  (ns '/')? nm
 // here ns cannot start with ':' since that would make it a kw
-// but the nm part can
-// Summary: anything beginning with ':' is a kw, hence KW_START
-// the ns part of a kw cannot start with ':', hence SYM_START
-// the nm part of kw and syms can start with ':', like kw, hence KW_START
+// but the nm part can start with ':'
+// Summary: anything beginning with ':' is a kw
+// the ns part of a kw cannot start with ':', hence NS_START
+// the nm part of kw and syms can start with ':', like kw, hence NM_START
 
 // ':' can be embedded after first char (but not '::')
 // to deal with this and the start char conditions,
@@ -210,12 +312,24 @@ mode DEFAULT_MODE;
 // and HARF, which adds ':' to HARF_START
 
 fragment
-KW_START : SYM_START | ':' ;
+NM_START : NS_START | ':' ;
 
 fragment
-SYM_START
+NS_START
     :  LETTER
     |  HARF_START
+    |   // covers all characters above 0xFF which are not a surrogate
+        ~[\u0000-\u00FF\uD800-\uDBFF]
+        {!Character.isDigit(_input.LA(-1))}?
+    |   // covers UTF-16 surrogate pairs encodings for U+10000 to U+10FFFF
+        [\uD800-\uDBFF] [\uDC00-\uDFFF]
+        {!Character.isDigit(Character.toCodePoint((char)_input.LA(-2), (char)_input.LA(-1)))}?
+    ;
+
+fragment
+NS_START_NOOP
+    :  LETTER
+    |  HARF_START_NOOP
     |   // covers all characters above 0xFF which are not a surrogate
         ~[\u0000-\u00FF\uD800-\uDBFF]
         {!Character.isDigit(_input.LA(-1))}?
@@ -234,10 +348,12 @@ HARF : HARF_START | ':' ;
 
 // HARF_START excludes ':', so we can distinguish between kws and syms
 fragment
-HARF_START
-    : '!'  | '#' | '$' | '%' | '&'
-    | '\'' | '*' | '+' | '-'
-    | '.'  | '<' | '=' | '>'
+HARF_START : HARF_START_NOOP | '+' | '-' | '*' ;
+
+fragment
+HARF_START_NOOP
+    : '!' | '#' | '$' | '%' | '&'
+    | '.' | '<' | '=' | '>' | '\''
     | '?' | '\\' | '_' | '|'
     ;
 
@@ -246,20 +362,13 @@ HARF_START
 // ascii order
 
 // fragment
-// MACRO_TERMINATING : '"' | '`' | '~' | ';' | '\\' | '@' | '^' ;
+MACRO_TERMINATING : '"' | '`' | '~' | ';' | '\\' | '@' | '^' ;
 
 // WARNING: repl behavior does not match LispReader.  The
 // latter says '%' is non-terminating; the former chokes on
 // e.g.  'a%b
 // fragment
 // MACRO_NON_TERMINATING : '#' | '%' | '\'' ;
-
-WS  :  [ \t\r\n\u000C]+ -> channel(WHITESPACE)
-    ;
-
-LINE_COMMENT
-    :   ';' ~[\r\n]* -> channel(COMMENT)
-    ;
 
 //mode STRICT;  // no embedded '/' in syms, etc.
 
@@ -268,4 +377,17 @@ LINE_COMMENT
 // in clojure.lang.LispReader
 // static Pattern symbolPat =
 //  Pattern.compile("[:]?([\\D&&[^/]].*/)?(/|[\\D&&[^/]][^/]*)");
+
+
+// %%%%%%%%%%%%%%%%
+
+
+////  end symbols.g4
+
+WS  :  [ \t\r\n\u000C]+ -> channel(WHITESPACE)
+    ;
+
+LINE_COMMENT
+    :   ';' ~[\r\n]* -> channel(COMMENTS)
+    ;
 
