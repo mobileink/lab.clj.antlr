@@ -85,12 +85,12 @@ import radix ;
 //     |   ('+' | '-')? FloatingPointNumeral
 //     ;
 
-Literal
-    :   CharacterLiteral
-    |   StringLiteral
-    |   BooleanLiteral
-    |   NilLiteral
-    ;
+// Literal
+//     :   CharacterLiteral
+//     |   StringLiteral
+//     |   BooleanLiteral
+//     |   NilLiteral
+//     ;
 
 // IntegerNumeral
 //     :   DecimalNumeral
