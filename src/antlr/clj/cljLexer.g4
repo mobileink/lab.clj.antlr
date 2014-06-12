@@ -344,7 +344,7 @@ NS_START_NOOP
 // legal: !   # $ % & '     * +   - .   :   < = > ?     \     _    |
 
 fragment
-HARF : HARF_START | ':' ;
+HARF : HARF_START | ':' | '\\' ;
 
 // HARF_START excludes ':', so we can distinguish between kws and syms
 fragment
@@ -354,7 +354,7 @@ fragment
 HARF_START_NOOP
     : '!' | '#' | '$' | '%' | '&'
     | '.' | '<' | '=' | '>' | '\''
-    | '?' | '\\' | '_' | '|'
+    | '?' | '_' | '|'
     ;
 
 //fragment
