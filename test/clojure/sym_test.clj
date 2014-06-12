@@ -129,4 +129,10 @@
     (is (= (clj/lex-string "a/b~c")
            '(BAD_SYM_MACRO EOF)))))
 
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(deftest sym-unicode
+  (testing "sym: unicode π pi"
+    (is (= (clj/lex-string "π")
+           '(SYM_NM EOF)))
+    (is (= (clj/lex-string "test.org/π")
+           '(SYM_NS SLASH SYM_NM EOF)))))
