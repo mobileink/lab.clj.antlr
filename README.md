@@ -1,6 +1,6 @@
-# rsch.antlr
+# lab.antlr
 
-This project is intended as a kind of research workbench for exploring
+This project is intended as a kind of research lab for exploring
 [ANTLR 4](http://www.antlr.org/) with [Clojure](http://clojure.org/).
 I do not expect to ever publish it as a product, so it does not have
 an alpha-beta-production status.  But I do expect to add to it from
